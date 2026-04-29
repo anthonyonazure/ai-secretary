@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Secretary — Typeface Comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --surface: #131316;
+    --border: #232328;
+    --fg: #e8e8ec;
+    --muted: #8a8a92;
+    --accent: #5b8ef5;
+    --success: #3ecf8e;
+    --danger: #ff5e5e;
+  }
+  body.light {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --border: #e6e6ea;
+    --fg: #15151a;
+    --muted: #6e6e76;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter', system-ui, sans-serif;
+    padding: 32px;
+    line-height: 1.45;
+    transition: background 0.15s, color 0.15s;
+  }
+  .topbar { display: flex; gap: 16px; align-items: center; margin-bottom: 32px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+  .topbar .muted { color: var(--muted); font-size: 13px; flex: 1; min-width: 200px; }
+  button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  button:hover { border-color: var(--accent); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 1280px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    overflow: hidden;
+  }
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .panel-name {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+  .panel-meta {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    text-align: right;
+  }
+  .inter      { font-family: 'Inter', sans-serif; font-feature-settings: "cv11", "ss01"; }
+  .inter-mono { font-family: 'JetBrains Mono', monospace; }
+  .geist      { font-family: 'Geist', sans-serif; }
+  .geist-mono { font-family: 'Geist Mono', monospace; }
+  .system     { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .system-mono{ font-family: ui-monospace, 'SF Mono', 'Menlo', monospace; }
+
+  /* Sample content */
+  .hero { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .hero-sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .app-h { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 24px 0 8px; }
+  .app-h:first-child { margin-top: 0; }
+  .meeting-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .meeting-item:last-child { border-bottom: none; }
+  .meeting-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; letter-spacing: -0.005em; }
+  .meeting-meta { color: var(--muted); font-size: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .num-tabular { font-feature-settings: "tnum" 1; font-variant-numeric: tabular-nums; }
+
+  .receipt-title { font-size: 22px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.018em; }
+  .receipt-time { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
+  .summary-prose { font-size: 14px; line-height: 1.62; color: var(--fg); margin-bottom: 16px; max-width: 60ch; }
+
+  .action-item { font-size: 14px; padding: 5px 0; display: flex; gap: 8px; align-items: center; }
+  .action-item input { margin: 0; accent-color: var(--accent); }
+
+  .audit-row { padding: 8px 0; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; font-size: 12px; }
+  .audit-row:last-child { border-bottom: none; }
+  .audit-id { font-size: 10.5px; color: var(--muted); }
+  .audit-action { font-size: 13px; line-height: 1.4; }
+  .micro-stats { font-size: 11px; color: var(--muted); margin-top: 14px; }
+  kbd { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-size: 10.5px; font-family: inherit; color: var(--muted); }
+
+  .cta-row { display: flex; gap: 8px; margin: 14px 0 6px; flex-wrap: wrap; }
+  .cta-row .primary { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .citation { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; font-size: 11px; color: var(--muted); margin-left: 4px; vertical-align: middle; }
+
+  .french { font-style: italic; color: var(--muted); font-size: 13px; padding: 8px 0; }
+
+  /* Söhne footnote */
+  .sohne-note {
+    margin-top: 32px;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: 800px;
+  }
+  .sohne-note h3 { color: var(--fg); margin-bottom: 12px; font-size: 16px; font-weight: 600; }
+  .sohne-note p { margin-bottom: 8px; }
+  .sohne-note a { color: var(--accent); text-decoration: none; }
+  .sohne-note a:hover { text-decoration: underline; }
+  .sohne-note .label { color: var(--fg); font-weight: 500; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>AI Secretary — Typeface Comparison</h1>
+    <span class="muted">Same UI rendered in each typeface. Toggle theme to compare in light + dark.</span>
+    <button id="toggle">Toggle light/dark</button>
+  </div>
+
+  <div class="grid">
+
+    <!-- INTER -->
+    <div class="panel inter">
+      <div class="panel-header">
+        <div class="panel-name">Inter</div>
+        <div class="panel-meta inter-mono">Used by Linear, GitHub, Figma<br>Free · Google Fonts</div>
+      </div>
+
+      <div class="hero">AI Secretary</div>
+      <div class="hero-sub">Calm competence for serious meetings.</div>
+
+      <div class="app-h">Today's meetings</div>
+      <div class="meeting-item">
+        <div class="meeting-title">Discovery call — Acme Corp</div>
+        <div class="meeting-meta">
+          <span>Sales · 42 min</span><span>·</span>
+          <span class="inter-mono num-tabular">14:32</span>
+        </div>
+      </div>
+      <div class="meeting-item">
+        <div class="meeting-title">Therapy session 06 — J. Reyes</div>
+        <div class="meeting-meta">
+          <span>Psychology · 50 min</span><span>·</span>
+          <span class="inter-mono num-tabular">10:00</span>
+        </div>
+      </div>
+      <div class="meeting-item">
+        <div class="meeting-title">Sprint planning, week 17</div>
+        <div class="meeting-meta">
+          <span>Project Management · 31 min</span><span>·</span>
+          <span class="inter-mono num-tabular">09:00</span>
+        </div>
+      </div>
+
+      <div class="app-h">Receipt — Discovery call</div>
+      <div class="receipt-title">Discovery call — Acme Corp</div>
+      <div class="receipt-time inter-mono num-tabular">2026-04-29 · 14:32 → 15:14</div>
+      <div class="summary-prose">
+        The buyer raised pricing concerns mid-call and pushed back on the
+        per-seat model<span class="citation inter-mono">14:32</span>.
+        They expressed strong interest in the audit-log capabilities
+        and asked specifically whether SOC2 Type II evidence is shareable
+        pre-contract<span class="citation inter-mono">22:08</span>. Next
+        step: send the security questionnaire and propose a 90-day pilot
+        with usage-based pricing.
+      </div>
+
+      <div class="app-h">Action items</div>
+      <div class="action-item"><input type="checkbox" /> Send SOC2 evidence packet to procurement</div>
+      <div class="action-item"><input type="checkbox" /> Draft pilot proposal w/ usage pricing — by Fri</div>
+      <div class="action-item"><input type="checkbox" /> Loop in legal on data-residency clause</div>
+
+      <div class="cta-row">
+        <button class="primary">Start recording</button>
+        <button>Search corpus <kbd class="inter-mono">⌘K</kbd></button>
+      </div>
+
+      <div class="app-h">Audit log</div>
+      <div class="audit-row">
+        <div>
+          <div class="audit-action">meeting.shared · clip 14:32–15:08 → <strong>jordan@acme.example</strong></div>
+          <div class="audit-id inter-mono">01HX9PQR8K3M2VWN5T7Q9Z</div>
+        </div>
+        <div class="audit-id inter-mono num-tabular">14:42:08</div>
+      </div>
+      <div class="audit-row">
+        <div>
+          <div class="audit-action">analysis.run · sales · meeting <strong>m_4f0c8a</strong></div>
+          <div class="audit-id inter-mono">01HX9PRS2N4K7XBV3M8L1Y</div>
+        </div>
+        <div class="audit-id inter-mono num-tabular">14:39:51</div>
+      </div>
+
+      <div class="french">Réunion préparatoire — équipe Lyon · jeudi prochain</div>
+      <div class="micro-stats inter-mono num-tabular">32 transcripts · last sync 2m ago · 99.7% pipeline success</div>
+    </div>
+
+    <!-- GEIST -->
+    <div class="panel geist">
+      <div class="panel-header">
+        <div class="panel-name">Geist</div>
+        <div class="panel-meta geist-mono">Used by Vercel, Resend<br>Free · Google Fonts</div>
+      </div>
+
+      <div class="hero">AI Secretary</div>
+      <div class="hero-sub">Calm competence for serious meetings.</div>
+
+      <div class="app-h">Today's meetings</div>
+      <div class="meeting-item">
+        <div class="meeting-title">Discovery call — Acme Corp</div>
+        <div class="meeting-meta">
+          <span>Sales · 42 min</span><span>·</span>
+          <span class="geist-mono num-tabular">14:32</span>
+        </div>
+      </div>
+      <div class="meeting-item">
+        <div class="meeting-title">Therapy session 06 — J. Reyes</div>
+        <div class="meeting-meta">
+          <span>Psychology · 50 min</span><span>·</span>
+          <span class="geist-mono num-tabular">10:00</span>
+        </div>
+      </div>
+      <div class="meeting-item">
+        <div class="meeting-title">Sprint planning, week 17</div>
+        <div class="meeting-meta">
+          <span>Project Management · 31 min</span><span>·</span>
+          <span class="geist-mono num-tabular">09:00</span>
+        </div>
+      </div>
+
+      <div class="app-h">Receipt — Discovery call</div>
+      <div class="receipt-title">Discovery call — Acme Corp</div>
+      <div class="receipt-time geist-mono num-tabular">2026-04-29 · 14:32 → 15:14</div>
+      <div class="summary-prose">
+        The buyer raised pricing concerns mid-call and pushed back on the
+        per-seat model<span class="citation geist-mono">14:32</span>.
+        They expressed strong interest in the audit-log capabilities
+        and asked specifically whether SOC2 Type II evidence is shareable
+        pre-contract<span class="citation geist-mono">22:08</span>. Next
+        step: send the security questionnaire and propose a 90-day pilot
+        with usage-based pricing.
+      </div>
+
+      <div class="app-h">Action items</div>
+      <div class="action-item"><input type="checkbox" /> Send SOC2 evidence packet to procurement</div>
+      <div class="action-item"><input type="checkbox" /> Draft pilot proposal w/ usage pricing — by Fri</div>
+      <div class="action-item"><input type="checkbox" /> Loop in legal on data-residency clause</div>
+
+      <div class="cta-row">
+        <button class="primary">Start recording</button>
+        <button>Search corpus <kbd class="geist-mono">⌘K</kbd></button>
+      </div>
+
+      <div class="app-h">Audit log</div>
+      <div class="audit-row">
+        <div>
+          <div class="audit-action">meeting.shared · clip 14:32–15:08 → <strong>jordan@acme.example</strong></div>
+          <div class="audit-id geist-mono">01HX9PQR8K3M2VWN5T7Q9Z</div>
+        </div>
+        <div class="audit-id geist-mono num-tabular">14:42:08</div>
+      </div>
+      <div class="audit-row">
+        <div>
+          <div class="audit-action">analysis.run · sales · meeting <strong>m_4f0c8a</strong></div>
+          <div class="audit-id geist-mono">01HX9PRS2N4K7XBV3M8L1Y</div>
+        </div>
+        <div class="audit-id geist-mono num-tabular">14:39:51</div>
+      </div>
+
+      <div class="french">Réunion préparatoire — équipe Lyon · jeudi prochain</div>
+      <div class="micro-stats geist-mono num-tabular">32 transcripts · last sync 2m ago · 99.7% pipeline success</div>
+    </div>
+
+    <!-- SYSTEM STACK -->
+    <div class="panel system">
+      <div class="panel-header">
+        <div class="panel-name">System Stack</div>
+        <div class="panel-meta system-mono">SF Pro on macOS / Segoe UI on Win<br>Free · zero load · varies by OS</div>
+      </div>
+
+      <div class="hero">AI Secretary</div>
+      <div class="hero-sub">Calm competence for serious meetings.</div>
+
+      <div class="app-h">Today's meetings</div>
+      <div class="meeting-item">
+        <div class="meeting-title">Discovery call — Acme Corp</div>
+        <div class="meeting-meta">
+          <span>Sales · 42 min</span><span>·</span>
+          <span class="system-mono num-tabular">14:32</span>
+        </div>
+      </div>
+      <div class="meeting-item">
+        <div class="meeting-title">Therapy session 06 — J. Reyes</div>
+        <div class="meeting-meta">
+          <span>Psychology · 50 min</span><span>·</span>
+          <span class="system-mono num-tabular">10:00</span>
+        </div>
+      </div>
+      <div class="meeting-item">
+        <div class="meeting-title">Sprint planning, week 17</div>
+        <div class="meeting-meta">
+          <span>Project Management · 31 min</span><span>·</span>
+          <span class="system-mono num-tabular">09:00</span>
+        </div>
+      </div>
+
+      <div class="app-h">Receipt — Discovery call</div>
+      <div class="receipt-title">Discovery call — Acme Corp</div>
+      <div class="receipt-time system-mono num-tabular">2026-04-29 · 14:32 → 15:14</div>
+      <div class="summary-prose">
+        The buyer raised pricing concerns mid-call and pushed back on the
+        per-seat model<span class="citation system-mono">14:32</span>.
+        They expressed strong interest in the audit-log capabilities
+        and asked specifically whether SOC2 Type II evidence is shareable
+        pre-contract<span class="citation system-mono">22:08</span>. Next
+        step: send the security questionnaire and propose a 90-day pilot
+        with usage-based pricing.
+      </div>
+
+      <div class="app-h">Action items</div>
+      <div class="action-item"><input type="checkbox" /> Send SOC2 evidence packet to procurement</div>
+      <div class="action-item"><input type="checkbox" /> Draft pilot proposal w/ usage pricing — by Fri</div>
+      <div class="action-item"><input type="checkbox" /> Loop in legal on data-residency clause</div>
+
+      <div class="cta-row">
+        <button class="primary">Start recording</button>
+        <button>Search corpus <kbd class="system-mono">⌘K</kbd></button>
+      </div>
+
+      <div class="app-h">Audit log</div>
+      <div class="audit-row">
+        <div>
+          <div class="audit-action">meeting.shared · clip 14:32–15:08 → <strong>jordan@acme.example</strong></div>
+          <div class="audit-id system-mono">01HX9PQR8K3M2VWN5T7Q9Z</div>
+        </div>
+        <div class="audit-id system-mono num-tabular">14:42:08</div>
+      </div>
+      <div class="audit-row">
+        <div>
+          <div class="audit-action">analysis.run · sales · meeting <strong>m_4f0c8a</strong></div>
+          <div class="audit-id system-mono">01HX9PRS2N4K7XBV3M8L1Y</div>
+        </div>
+        <div class="audit-id system-mono num-tabular">14:39:51</div>
+      </div>
+
+      <div class="french">Réunion préparatoire — équipe Lyon · jeudi prochain</div>
+      <div class="micro-stats system-mono num-tabular">32 transcripts · last sync 2m ago · 99.7% pipeline success</div>
+    </div>
+
+  </div>
+
+  <div class="sohne-note">
+    <h3>About Söhne</h3>
+    <p>Söhne (Klim Type Foundry) is a paid font. It isn't on Google Fonts or any free CDN, so it can't be rendered live in this preview without a license. Visit <a href="https://klim.co.nz/buy/sohne/" target="_blank" rel="noopener">klim.co.nz/buy/sohne</a> for proper specimens — or look at GitHub, OpenAI, Notion, or Stripe in production.</p>
+    <p><span class="label">Visual character:</span> grotesque-derived like Inter and Geist, but with subtle humanist warmth — slightly more characterful at headings, comparable readability at small sizes. Premium feel.</p>
+    <p><span class="label">Cost:</span> ~$300+ for a multi-weight family + per-domain web licensing. Per-domain licensing affects the embed surfaces (HubSpot/Salesforce extension, Slack/Teams hub, public DSAR portal, marketing site) — needs accounting for.</p>
+    <p><span class="label">Closest free comparable rendering:</span> none truly — Inter and Geist are both grotesque-derived but lack Söhne's specific warmth. Don't substitute.</p>
+  </div>
+
+  <script>
+    document.getElementById('toggle').addEventListener('click', () => {
+      document.body.classList.toggle('light');
+    });
+  </script>
+</body>
+</html>

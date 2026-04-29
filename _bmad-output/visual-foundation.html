@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Secretary — Visual Foundation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* =====================================================
+   TOKENS (CSS variables)
+   Theme = scope (light/dark)
+   Density = mode class (dense/relaxed/accessible)
+   ===================================================== */
+:root,
+.theme-light {
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f4f6;
+  --color-fg: #15151a;
+  --color-muted: #6e6e76;
+  --color-border: #e6e6ea;
+  --color-border-strong: #d4d4da;
+  --color-accent: #4f46e5;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #eef2ff;
+  --color-success: #16a34a;
+  --color-warning: #b45309; /* darkened from #d97706 to pass WCAG AA body */
+  --color-danger: #dc2626;
+  --color-disabled-bg: #f4f4f6;
+  --color-disabled-fg: #a8a8b0;
+  --focus-ring-on-accent: #ffffff;
+}
+.theme-dark {
+  --color-bg: #131316;            /* lighter than #0b0b0d to reduce OLED halation */
+  --color-surface: #1c1c20;       /* shifted up one step */
+  --color-surface-2: #21212a;     /* shifted up for clearer elevation distinction */
+  --color-fg: #e8e8ec;
+  --color-muted: #8a8a92;
+  --color-border: #2a2a30;
+  --color-border-strong: #3a3a42;
+  --color-accent: #818cf8;        /* less saturated than #6366f1 — calmer on dark */
+  --color-accent-fg: #0b0b0d;
+  --color-accent-soft: #1e1b4b;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-disabled-bg: #21212a;
+  --color-disabled-fg: #52525a;
+  --focus-ring-on-accent: #ffffff;
+}
+.density-dense {
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 48px;
+  --text-xs: 11px; --text-sm: 13px; --text-base: 14px; --text-md: 15px;
+  --text-lg: 18px; --text-xl: 20px; --text-2xl: 24px; --text-3xl: 30px;
+  --leading-tight: 1.25; --leading-normal: 1.5; --leading-loose: 1.65;
+  --tracking-tight: -0.018em; --tracking-normal: 0; --tracking-wide: 0.04em;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
+  --touch-min: 44px;        /* WCAG AAA target — bumped from 36px AA target */
+  --motion-base: 200ms;
+}
+.density-relaxed {
+  --space-1: 6px; --space-2: 12px; --space-3: 16px; --space-4: 20px;
+  --space-5: 24px; --space-6: 32px; --space-7: 40px; --space-8: 56px;
+  --text-xs: 12px; --text-sm: 14px; --text-base: 15px; --text-md: 16px;
+  --text-lg: 19px; --text-xl: 22px; --text-2xl: 26px; --text-3xl: 32px;
+  --leading-tight: 1.3; --leading-normal: 1.55; --leading-loose: 1.7;
+  --tracking-tight: -0.018em; --tracking-normal: 0; --tracking-wide: 0.04em;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
+  --touch-min: 44px;
+  --motion-base: 320ms;
+}
+.density-accessible {
+  --space-1: 8px; --space-2: 14px; --space-3: 18px; --space-4: 22px;
+  --space-5: 26px; --space-6: 34px; --space-7: 44px; --space-8: 60px;
+  --text-xs: 14px; --text-sm: 16px; --text-base: 17px; --text-md: 18px;
+  --text-lg: 21px; --text-xl: 24px; --text-2xl: 28px; --text-3xl: 34px;
+  --leading-tight: 1.35; --leading-normal: 1.6; --leading-loose: 1.75;
+  --tracking-tight: -0.018em; --tracking-normal: 0; --tracking-wide: 0.04em;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
+  --touch-min: 48px;
+  --motion-base: 0ms; /* respect reduced motion */
+}
+
+/* Reset + base */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  padding: var(--space-7);
+  transition: background var(--motion-base), color var(--motion-base);
+}
+.mono { font-family: 'Geist Mono', monospace; }
+.tabular { font-variant-numeric: tabular-nums; }
+h1, h2, h3, h4 { letter-spacing: var(--tracking-tight); line-height: var(--leading-tight); font-weight: 600; }
+h1 { font-size: var(--text-2xl); margin-bottom: var(--space-2); }
+h2 { font-size: var(--text-xl); margin-top: var(--space-7); margin-bottom: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-border); }
+h3 { font-size: var(--text-lg); margin-top: var(--space-5); margin-bottom: var(--space-2); }
+.eyebrow {
+  font-size: var(--text-xs); font-weight: 600; letter-spacing: var(--tracking-wide);
+  text-transform: uppercase; color: var(--color-muted); margin-bottom: var(--space-1);
+}
+button {
+  font-family: inherit; font-size: var(--text-sm); font-weight: 500;
+  background: var(--color-surface); color: var(--color-fg);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-3); cursor: pointer;
+  min-height: var(--touch-min);
+  transition: border-color var(--motion-base), background var(--motion-base);
+}
+button:hover { border-color: var(--color-border-strong); }
+button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+button.primary { background: var(--color-accent); color: var(--color-accent-fg); border-color: var(--color-accent); }
+button.primary:hover { filter: brightness(1.05); }
+button.primary:focus-visible { outline: 2px solid var(--focus-ring-on-accent); outline-offset: 2px; box-shadow: 0 0 0 4px var(--color-accent); }
+button.danger { color: var(--color-danger); border-color: var(--color-border); }
+button[disabled] { background: var(--color-disabled-bg); color: var(--color-disabled-fg); cursor: not-allowed; }
+
+kbd {
+  font-family: 'Geist Mono', monospace;
+  font-size: var(--text-xs);
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm); padding: 1px 6px; color: var(--color-muted);
+}
+
+/* =====================================================
+   CONTROLS
+   ===================================================== */
+.controls {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-7);
+  display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.controls h1 { margin: 0; font-size: var(--text-base); font-weight: 600; }
+.controls .group { display: flex; gap: var(--space-1); align-items: center; }
+.controls label { font-size: var(--text-xs); color: var(--color-muted); font-weight: 500; text-transform: uppercase; letter-spacing: var(--tracking-wide); margin-right: var(--space-1); }
+.controls .seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.controls .seg button { border: none; border-radius: 0; min-height: 28px; padding: 4px 10px; font-size: var(--text-xs); }
+.controls .seg button.active { background: var(--color-accent-soft); color: var(--color-accent); }
+.controls .spacer { flex: 1; min-width: 16px; }
+.controls .meta { font-size: var(--text-xs); color: var(--color-muted); }
+
+/* =====================================================
+   COLOR SWATCHES
+   ===================================================== */
+.swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-3); }
+.swatch {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.swatch-preview { height: 64px; }
+.swatch-meta { padding: var(--space-2) var(--space-3); }
+.swatch-name { font-size: var(--text-sm); font-weight: 500; }
+.swatch-hex { font-family: 'Geist Mono', monospace; font-size: var(--text-xs); color: var(--color-muted); }
+.swatch-contrast { font-family: 'Geist Mono', monospace; font-size: var(--text-xs); margin-top: 4px; }
+.contrast-pass { color: var(--color-success); }
+.contrast-fail { color: var(--color-danger); }
+
+/* =====================================================
+   TYPE SCALE
+   ===================================================== */
+.type-row { display: grid; grid-template-columns: 80px 1fr; gap: var(--space-4); align-items: baseline; padding: var(--space-2) 0; border-bottom: 1px solid var(--color-border); }
+.type-row:last-child { border-bottom: none; }
+.type-tag { font-family: 'Geist Mono', monospace; font-size: var(--text-xs); color: var(--color-muted); }
+.type-sample-3xl { font-size: var(--text-3xl); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--leading-tight); }
+.type-sample-2xl { font-size: var(--text-2xl); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--leading-tight); }
+.type-sample-xl { font-size: var(--text-xl); font-weight: 600; letter-spacing: var(--tracking-tight); line-height: var(--leading-tight); }
+.type-sample-lg { font-size: var(--text-lg); font-weight: 600; line-height: var(--leading-tight); }
+.type-sample-md { font-size: var(--text-md); font-weight: 400; line-height: var(--leading-normal); }
+.type-sample-base { font-size: var(--text-base); font-weight: 400; line-height: var(--leading-normal); }
+.type-sample-sm { font-size: var(--text-sm); font-weight: 500; line-height: var(--leading-normal); }
+.type-sample-xs { font-size: var(--text-xs); font-weight: 500; line-height: var(--leading-normal); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--color-muted); }
+
+/* =====================================================
+   SPACING SCALE
+   ===================================================== */
+.space-row { display: grid; grid-template-columns: 80px 80px 1fr; gap: var(--space-4); align-items: center; padding: var(--space-1) 0; }
+.space-tag { font-family: 'Geist Mono', monospace; font-size: var(--text-xs); color: var(--color-muted); }
+.space-bar { background: var(--color-accent); height: 8px; border-radius: var(--radius-sm); }
+
+/* =====================================================
+   APP MOCKUPS
+   ===================================================== */
+.mockup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); align-items: start; }
+@media (max-width: 1100px) { .mockup-grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+/* Meeting list */
+.meeting-row { padding: var(--space-2) 0; border-bottom: 1px solid var(--color-border); display: grid; grid-template-columns: 1fr auto; gap: var(--space-3); align-items: center; }
+.meeting-row:last-child { border-bottom: none; }
+.meeting-title { font-size: var(--text-base); font-weight: 600; margin-bottom: 2px; }
+.meeting-meta { font-size: var(--text-xs); color: var(--color-muted); display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.meeting-badge {
+  font-size: 10.5px; padding: 2px 8px; border-radius: 999px;
+  background: var(--color-surface-2); color: var(--color-muted);
+}
+.module-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; }
+
+/* Recording pill */
+.recording-pill {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  background: var(--color-accent-soft); color: var(--color-accent);
+  border: 1px solid var(--color-accent); border-radius: 999px;
+  padding: 4px 10px; font-size: var(--text-xs); font-weight: 500;
+}
+.recording-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); }
+.recording-pill.active .recording-dot { background: var(--color-danger); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
+
+/* Receipt */
+.receipt-eyebrow { font-size: var(--text-xs); color: var(--color-muted); margin-bottom: var(--space-1); display: flex; gap: var(--space-2); align-items: center; }
+.receipt-title { font-size: var(--text-2xl); font-weight: 700; letter-spacing: var(--tracking-tight); margin-bottom: var(--space-1); }
+.receipt-time { font-family: 'Geist Mono', monospace; font-size: var(--text-xs); color: var(--color-muted); margin-bottom: var(--space-4); }
+.receipt-prose { font-size: var(--text-md); line-height: var(--leading-loose); max-width: 60ch; margin-bottom: var(--space-4); }
+/* Receipt prose now uses --text-md across all densities (15px in dense, 16px in relaxed, 18px in accessible) — receipt is the emotional anchor surface and gets one-step bump even in dense */
+
+.citation {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--color-accent-soft); color: var(--color-accent);
+  border: 1px solid var(--color-accent); border-radius: var(--radius-sm);
+  padding: 0px 5px; font-size: 10.5px; font-family: 'Geist Mono', monospace;
+  margin: 0 2px; vertical-align: middle; cursor: pointer;
+  transition: filter var(--motion-base);
+}
+.citation:hover { filter: brightness(1.1); }
+
+.section-label { font-size: var(--text-xs); font-weight: 600; letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--color-muted); margin: var(--space-4) 0 var(--space-2); }
+.action { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-1) 0; font-size: var(--text-base); }
+.action input { accent-color: var(--color-accent); }
+.action-meta { font-family: 'Geist Mono', monospace; font-size: var(--text-xs); color: var(--color-muted); margin-left: auto; }
+
+.btn-row { display: flex; gap: var(--space-2); margin-top: var(--space-4); flex-wrap: wrap; }
+
+/* Audit log */
+.audit-row {
+  display: grid; grid-template-columns: 1fr auto; gap: var(--space-3); align-items: center;
+  padding: var(--space-2); border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  border-left: 3px solid transparent;
+  transition: background var(--motion-base);
+}
+.audit-row:last-child { border-bottom: none; }
+.audit-row:hover { background: var(--color-surface-2); }
+/* Module-tinted border-left — CONTROLLED EXCEPTION to no-color-coding rule.
+   Allowed only in admin / audit / HIPAA-review surfaces. Helps reviewers
+   scan clinical entries vs. general entries. Never appears in user-facing UI. */
+.audit-row[data-module="sales"]      { border-left-color: #818cf8; } /* indigo-400, muted */
+.audit-row[data-module="psychology"] { border-left-color: #5eead4; } /* teal-300 */
+.audit-row[data-module="medical"]    { border-left-color: #67e8f9; } /* cyan-300 */
+.audit-row[data-module="education"]  { border-left-color: #86efac; } /* green-300 */
+.audit-row[data-module="hr"]         { border-left-color: #c4b5fd; } /* violet-300 */
+.audit-row[data-module="pm"]         { border-left-color: #fcd34d; } /* amber-300 */
+.audit-row[data-module="support"]    { border-left-color: #fda4af; } /* rose-300 */
+.audit-row[data-module="general"]    { border-left-color: #cbd5e1; } /* slate-300 */
+.audit-action { font-size: var(--text-sm); }
+.audit-id { font-family: 'Geist Mono', monospace; font-size: 10.5px; color: var(--color-muted); }
+.audit-time { font-family: 'Geist Mono', monospace; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+
+/* Status states */
+.status-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--text-xs); font-weight: 500;
+  border-radius: 999px; padding: 2px 8px;
+  border: 1px solid;
+}
+.status-pill.success { color: var(--color-success); border-color: var(--color-success); background: color-mix(in srgb, var(--color-success) 10%, transparent); }
+.status-pill.warning { color: var(--color-warning); border-color: var(--color-warning); background: color-mix(in srgb, var(--color-warning) 10%, transparent); }
+.status-pill.danger { color: var(--color-danger); border-color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 10%, transparent); }
+
+/* French line */
+.french { font-style: italic; color: var(--color-muted); font-size: var(--text-sm); padding: var(--space-1) 0; }
+
+/* Stats */
+.stats { display: flex; gap: var(--space-5); margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-border); flex-wrap: wrap; }
+.stat .num { font-size: var(--text-xl); font-weight: 600; font-feature-settings: "tnum" 1; }
+.stat .label { font-size: var(--text-xs); color: var(--color-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
+
+/* Spacing demo gap */
+.density-note {
+  background: var(--color-accent-soft); color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+  font-size: var(--text-sm); margin-bottom: var(--space-4);
+  display: inline-block;
+}
+</style>
+</head>
+<body class="theme-light density-dense">
+
+<div class="controls">
+  <h1>AI Secretary — Visual Foundation</h1>
+  <div class="group">
+    <label>Theme</label>
+    <div class="seg" id="theme-seg">
+      <button data-theme="light" class="active">Light</button>
+      <button data-theme="dark">Dark</button>
+    </div>
+  </div>
+  <div class="group">
+    <label>Density</label>
+    <div class="seg" id="density-seg">
+      <button data-density="dense" class="active">Dense</button>
+      <button data-density="relaxed">Relaxed (clinical)</button>
+      <button data-density="accessible">Accessible</button>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <span class="meta mono">Geist · indigo accent · 4px base</span>
+</div>
+
+<div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: var(--radius-lg); padding: var(--space-4); margin-bottom: var(--space-7); font-size: var(--text-sm);">
+  <div style="font-weight: 600; margin-bottom: var(--space-2); color: var(--color-accent);">Changes from Round 6 party mode (revision 2)</div>
+  <ul style="padding-left: 20px; line-height: var(--leading-loose); color: var(--color-fg);">
+    <li><strong>Light warning</strong> darkened from <code class="mono">#d97706</code> → <code class="mono">#b45309</code> (now passes WCAG AA body-text contrast)</li>
+    <li><strong>Dark bg</strong> lifted from <code class="mono">#0b0b0d</code> → <code class="mono">#131316</code>; surface to <code class="mono">#1c1c20</code>; surface-2 to <code class="mono">#21212a</code> (less OLED halation, clearer elevation)</li>
+    <li><strong>Dark accent</strong> swapped <code class="mono">#6366f1</code> → <code class="mono">#818cf8</code> (less saturated, calmer on dark surfaces)</li>
+    <li><strong>Focus-ring-on-accent</strong> token added — primary buttons get a white ring + accent halo on keyboard focus, visible against the indigo</li>
+    <li><strong>Receipt prose</strong> bumped to <code class="mono">--text-md</code> (15px in dense, 16px in relaxed, 18px in accessible) — emotional anchor surface gets one-step bump even in dense</li>
+    <li><strong>Audit log</strong> rows now carry a <em>module-tinted left border</em> as a controlled exception to the no-color-coding rule (admin / audit / HIPAA-review surfaces only — never user-facing)</li>
+    <li><strong>Clinical receipt</strong> mockup added below — demonstrates auto-relaxed density + per-vertical copy register (<em>"Generating session note... ready in ~15 min"</em> vs. snappy <em>"Receipt ready in 3 min"</em>)</li>
+    <li><strong>Touch targets bumped to WCAG AAA</strong> — 44px minimum across all densities (was 36px AA in dense). Buttons feel slightly more tappable in dense mode.</li>
+  </ul>
+  <div style="font-size: var(--text-xs); color: var(--color-muted); margin-top: var(--space-2);">Try toggling theme + density above to see all variants. Check focus rings by tab-keying through buttons.</div>
+</div>
+
+<h2>Color tokens</h2>
+<div class="density-note" id="density-note">Showing <strong>dense</strong> density × <strong>light</strong> theme</div>
+
+<h3>Surface + content</h3>
+<div class="swatch-grid" id="swatches-surface"></div>
+
+<h3>Accent + states</h3>
+<div class="swatch-grid" id="swatches-accent"></div>
+
+<h2>Typography scale</h2>
+<div class="card">
+  <div class="type-row"><span class="type-tag">3xl / 700</span><span class="type-sample-3xl">AI Secretary</span></div>
+  <div class="type-row"><span class="type-tag">2xl / 700</span><span class="type-sample-2xl">Discovery call — Acme Corp</span></div>
+  <div class="type-row"><span class="type-tag">xl / 600</span><span class="type-sample-xl">Today's meetings</span></div>
+  <div class="type-row"><span class="type-tag">lg / 600</span><span class="type-sample-lg">Action items</span></div>
+  <div class="type-row"><span class="type-tag">md / 400</span><span class="type-sample-md">The receipt summary prose lives here. Geist holds up well at small sizes; the relaxed density mode shifts this up to 16px for clinical surfaces.</span></div>
+  <div class="type-row"><span class="type-tag">base / 400</span><span class="type-sample-base">Body default — meeting list rows, summary excerpts, action item text.</span></div>
+  <div class="type-row"><span class="type-tag">sm / 500</span><span class="type-sample-sm">UI labels, button text, secondary metadata</span></div>
+  <div class="type-row"><span class="type-tag">xs / 500</span><span class="type-sample-xs">Eyebrow / Section / Microcopy</span></div>
+</div>
+
+<h2>Spacing scale (4px base)</h2>
+<div class="card" id="spacing-grid"></div>
+
+<h2>Real UI in this theme + density</h2>
+<div class="mockup-grid">
+
+  <!-- Meeting list + recording pill -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);">
+      <div>
+        <div class="eyebrow">Today</div>
+        <div style="font-size:var(--text-lg);font-weight:600;letter-spacing:var(--tracking-tight);">3 meetings</div>
+      </div>
+      <div class="recording-pill active">
+        <span class="recording-dot"></span>
+        Recording <span class="mono tabular">12:04</span>
+      </div>
+    </div>
+    <div class="meeting-row">
+      <div>
+        <div class="meeting-title">Discovery call — Acme Corp</div>
+        <div class="meeting-meta">
+          <span class="meeting-badge">Sales</span>
+          <span>· 42 min · 3 participants</span>
+        </div>
+      </div>
+      <span class="mono tabular meeting-meta">14:32</span>
+    </div>
+    <div class="meeting-row">
+      <div>
+        <div class="meeting-title">Therapy session 06 — J. Reyes</div>
+        <div class="meeting-meta">
+          <span class="meeting-badge">Psychology</span>
+          <span>· 50 min · in person</span>
+        </div>
+      </div>
+      <span class="mono tabular meeting-meta">10:00</span>
+    </div>
+    <div class="meeting-row">
+      <div>
+        <div class="meeting-title">Sprint planning, week 17</div>
+        <div class="meeting-meta">
+          <span class="meeting-badge">Project Mgmt</span>
+          <span>· 31 min · 5 participants</span>
+        </div>
+      </div>
+      <span class="mono tabular meeting-meta">09:00</span>
+    </div>
+
+    <div class="french">Réunion préparatoire — équipe Lyon · jeudi prochain</div>
+
+    <div class="stats">
+      <div class="stat"><div class="num">32</div><div class="label">Transcripts</div></div>
+      <div class="stat"><div class="num">99.7%</div><div class="label">Pipeline</div></div>
+      <div class="stat"><div class="num">3</div><div class="label">Open actions</div></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="primary">Start recording</button>
+      <button>Search corpus <kbd>⌘K</kbd></button>
+      <button disabled>Sync HubSpot</button>
+    </div>
+  </div>
+
+  <!-- Receipt -->
+  <div class="card">
+    <div class="receipt-eyebrow">
+      <span class="meeting-badge">Sales</span>
+      <span>·</span>
+      <span class="status-pill success">Receipt ready</span>
+    </div>
+    <div class="receipt-title">Discovery call — Acme Corp</div>
+    <div class="receipt-time">2026-04-29 · 14:32 → 15:14 · 42 min</div>
+
+    <div class="section-label">Summary</div>
+    <div class="receipt-prose">
+      The buyer raised pricing concerns mid-call and pushed back on the per-seat model<span class="citation">14:32</span>. They expressed strong interest in the audit-log capabilities and asked specifically whether SOC2 Type II evidence is shareable pre-contract<span class="citation">22:08</span>. Next step: send the security questionnaire and propose a 90-day pilot with usage-based pricing.
+    </div>
+
+    <div class="section-label">Action items</div>
+    <div class="action"><input type="checkbox" /> Send SOC2 evidence packet to procurement <span class="action-meta">@you · today</span></div>
+    <div class="action"><input type="checkbox" /> Draft pilot proposal w/ usage pricing <span class="action-meta">@you · Fri</span></div>
+    <div class="action"><input type="checkbox" /> Loop in legal on data-residency clause <span class="action-meta">@legal · Mon</span></div>
+
+    <div class="section-label">Status</div>
+    <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
+      <span class="status-pill success">Module: Sales (95% confidence)</span>
+      <span class="status-pill warning">Low audio quality 18:00–18:30</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="primary">Share clip</button>
+      <button>Push to HubSpot</button>
+      <button>Open transcript</button>
+    </div>
+  </div>
+
+</div>
+
+<h2>Clinical receipt — auto-relaxed density + per-vertical copy</h2>
+<p style="font-size: var(--text-sm); color: var(--color-muted); max-width: 60ch; margin-bottom: var(--space-3);">
+  This card is forced to <code>density-relaxed</code> regardless of the global toggle, because the meeting is <strong>medical / psychology</strong>. The copy register is also vertical-aware: <em>"Generating session note... ready in ~15 min"</em> instead of <em>"Receipt ready in 3 min"</em>. Time signage follows vertical pacing.
+</p>
+
+<div class="density-relaxed" style="display: contents;">
+  <div class="card" style="max-width: 800px;">
+    <div class="receipt-eyebrow">
+      <span class="meeting-badge">Psychology</span>
+      <span>·</span>
+      <span class="status-pill warning">Generating session note... ready in ~15 min</span>
+    </div>
+    <div class="receipt-title">Therapy session 06 — J. Reyes</div>
+    <div class="receipt-time">2026-04-29 · 10:00 → 10:50 · 50 min · in person</div>
+
+    <div class="section-label">Subjective</div>
+    <div class="receipt-prose">
+      Client reported continued sleep disruption since last session, averaging 4–5 hours per night<span class="citation">04:18</span>. Cited increased work pressure and a recent argument with their partner as primary stressors. Affect was constricted at session start, gradually warming over the first fifteen minutes.
+    </div>
+
+    <div class="section-label">Assessment</div>
+    <div class="receipt-prose">
+      Symptoms continue to align with adjustment disorder with mixed anxiety and depressed mood<span class="citation">28:42</span>. No suicidal ideation reported or observed; safety plan from session 03 reviewed and remains in place.
+    </div>
+
+    <div class="section-label">Plan</div>
+    <div class="action"><input type="checkbox" /> Continue weekly sessions through end of month <span class="action-meta">@you</span></div>
+    <div class="action"><input type="checkbox" /> Introduce sleep hygiene worksheet next session <span class="action-meta">@you · next session</span></div>
+    <div class="action"><input type="checkbox" /> Refer for prescriber consultation if no improvement in 2 weeks <span class="action-meta">@you · review 2 wks</span></div>
+
+    <div class="section-label">Status</div>
+    <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
+      <span class="status-pill success">Module: Psychology (confirmed at capture)</span>
+      <span class="status-pill warning">Live notes disabled (clinical default)</span>
+    </div>
+
+    <div class="btn-row">
+      <button>Edit and sign</button>
+      <button>View transcript</button>
+    </div>
+  </div>
+</div>
+
+<h2>Audit log (Stripe-grade)</h2>
+<div class="card">
+  <div class="eyebrow">Last 24 hours</div>
+  <div class="audit-row" data-module="sales">
+    <div>
+      <div class="audit-action"><strong>meeting.shared</strong> · clip 14:32–15:08 → <strong>jordan@acme.example</strong></div>
+      <div class="audit-id">01HX9PQR8K3M2VWN5T7Q9Z</div>
+    </div>
+    <div class="audit-time">14:42:08 UTC</div>
+  </div>
+  <div class="audit-row" data-module="sales">
+    <div>
+      <div class="audit-action"><strong>analysis.run</strong> · sales · meeting <strong>m_4f0c8a</strong></div>
+      <div class="audit-id">01HX9PRS2N4K7XBV3M8L1Y</div>
+    </div>
+    <div class="audit-time">14:39:51 UTC</div>
+  </div>
+  <div class="audit-row" data-module="psychology">
+    <div>
+      <div class="audit-action"><strong>analysis.run</strong> · psychology · meeting <strong>m_8a2dc3</strong> (session note draft generated)</div>
+      <div class="audit-id">01HX9PMM7KF8L3X2NCQ4VB</div>
+    </div>
+    <div class="audit-time">12:18:42 UTC</div>
+  </div>
+  <div class="audit-row" data-module="general">
+    <div>
+      <div class="audit-action"><strong>recording.completed</strong> · <strong>m_5c1e7b</strong> · 31 min · 28.4 MB</div>
+      <div class="audit-id">01HX9PEQQT8WJ5N3R7HVZB</div>
+    </div>
+    <div class="audit-time">09:31:09 UTC</div>
+  </div>
+  <div class="audit-row" data-module="education">
+    <div>
+      <div class="audit-action"><strong>consent.declined</strong> · participant <strong>student_07</strong> · meeting <strong>m_3f8d22</strong> (recording auto-quarantined)</div>
+      <div class="audit-id">01HX9N4XB7Q2W6KZP1R8YC</div>
+    </div>
+    <div class="audit-time">Yesterday 16:42 UTC</div>
+  </div>
+  <div style="font-size: var(--text-xs); color: var(--color-muted); margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border);">
+    <strong>Note:</strong> module-tinted left border is a controlled exception to the no-color-coding rule, scoped to admin / audit / HIPAA-review surfaces only. Helps reviewers scan for clinical entries during compliance work. Never appears in user-facing UI.
+  </div>
+</div>
+
+<script>
+/* =====================================================
+   Theme + density toggle
+   ===================================================== */
+const themeSeg = document.getElementById('theme-seg');
+const densitySeg = document.getElementById('density-seg');
+const note = document.getElementById('density-note');
+
+function applyTheme(theme) {
+  document.body.classList.remove('theme-light', 'theme-dark');
+  document.body.classList.add(`theme-${theme}`);
+  for (const b of themeSeg.querySelectorAll('button')) {
+    b.classList.toggle('active', b.dataset.theme === theme);
+  }
+  updateNote();
+  renderSwatches();
+}
+function applyDensity(density) {
+  document.body.classList.remove('density-dense', 'density-relaxed', 'density-accessible');
+  document.body.classList.add(`density-${density}`);
+  for (const b of densitySeg.querySelectorAll('button')) {
+    b.classList.toggle('active', b.dataset.density === density);
+  }
+  updateNote();
+}
+function getCurrentTheme() {
+  return document.body.classList.contains('theme-dark') ? 'dark' : 'light';
+}
+function getCurrentDensity() {
+  if (document.body.classList.contains('density-relaxed')) return 'relaxed';
+  if (document.body.classList.contains('density-accessible')) return 'accessible';
+  return 'dense';
+}
+function updateNote() {
+  note.innerHTML = `Showing <strong>${getCurrentDensity()}</strong> density × <strong>${getCurrentTheme()}</strong> theme`;
+}
+themeSeg.addEventListener('click', e => {
+  if (e.target.matches('button')) applyTheme(e.target.dataset.theme);
+});
+densitySeg.addEventListener('click', e => {
+  if (e.target.matches('button')) applyDensity(e.target.dataset.density);
+});
+
+/* =====================================================
+   Swatch rendering with WCAG contrast
+   ===================================================== */
+function hexToRgb(hex) {
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function relLuminance([r,g,b]) {
+  const t = c => { c = c/255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+  const [R,G,B] = [t(r),t(g),t(b)];
+  return 0.2126*R + 0.7152*G + 0.0722*B;
+}
+function contrast(c1, c2) {
+  const l1 = relLuminance(hexToRgb(c1));
+  const l2 = relLuminance(hexToRgb(c2));
+  const [a,b] = l1 > l2 ? [l1,l2] : [l2,l1];
+  return (a + 0.05) / (b + 0.05);
+}
+function getCssVar(name) {
+  return getComputedStyle(document.body).getPropertyValue(name).trim();
+}
+
+const surfaceTokens = [
+  ['bg', '--color-bg', 'App background', null],
+  ['surface', '--color-surface', 'Cards, panels', '--color-fg'],
+  ['surface-2', '--color-surface-2', 'Hover, elevation', '--color-fg'],
+  ['fg', '--color-fg', 'Primary text', '--color-bg'],
+  ['muted', '--color-muted', 'Secondary text', '--color-bg'],
+  ['border', '--color-border', 'Default borders', null],
+  ['border-strong', '--color-border-strong', 'Emphasized borders', null],
+  ['disabled-bg', '--color-disabled-bg', 'Disabled bg', '--color-disabled-fg'],
+  ['disabled-fg', '--color-disabled-fg', 'Disabled fg', '--color-disabled-bg'],
+];
+const accentTokens = [
+  ['accent', '--color-accent', 'Primary CTA, active', '--color-accent-fg'],
+  ['accent-fg', '--color-accent-fg', 'Text on accent', '--color-accent'],
+  ['accent-soft', '--color-accent-soft', 'Soft accent fill', '--color-accent'],
+  ['success', '--color-success', 'Success states', '--color-bg'],
+  ['warning', '--color-warning', 'Warnings, low-confidence', '--color-bg'],
+  ['danger', '--color-danger', 'Destructive, capture-at-risk', '--color-bg'],
+];
+
+function renderSwatchSet(tokens, container) {
+  container.innerHTML = '';
+  tokens.forEach(([name, varName, useText, contrastAgainst]) => {
+    const hex = getCssVar(varName);
+    const sw = document.createElement('div');
+    sw.className = 'swatch';
+    sw.innerHTML = `
+      <div class="swatch-preview" style="background: ${hex}"></div>
+      <div class="swatch-meta">
+        <div class="swatch-name">${name}</div>
+        <div class="swatch-hex">${hex}</div>
+        <div class="swatch-name" style="font-size:var(--text-xs);color:var(--color-muted);font-weight:400;margin-top:2px;">${useText}</div>
+      </div>
+    `;
+    if (contrastAgainst) {
+      const otherHex = getCssVar(contrastAgainst);
+      const ratio = contrast(hex, otherHex);
+      const passAA = ratio >= 4.5;
+      const passAALarge = ratio >= 3;
+      const meta = sw.querySelector('.swatch-meta');
+      const c = document.createElement('div');
+      c.className = 'swatch-contrast';
+      c.innerHTML = `<span class="${passAA ? 'contrast-pass' : (passAALarge ? 'contrast-pass' : 'contrast-fail')}">${ratio.toFixed(2)}:1 ${passAA ? '✓ AA' : (passAALarge ? '✓ AA-large' : '✗ fail')}</span>`;
+      meta.appendChild(c);
+    }
+    container.appendChild(sw);
+  });
+}
+
+function renderSwatches() {
+  renderSwatchSet(surfaceTokens, document.getElementById('swatches-surface'));
+  renderSwatchSet(accentTokens, document.getElementById('swatches-accent'));
+}
+
+/* =====================================================
+   Spacing scale
+   ===================================================== */
+const spacingTokens = [
+  ['space-1', 4, 6, 8],
+  ['space-2', 8, 12, 14],
+  ['space-3', 12, 16, 18],
+  ['space-4', 16, 20, 22],
+  ['space-5', 20, 24, 26],
+  ['space-6', 24, 32, 34],
+  ['space-7', 32, 40, 44],
+  ['space-8', 48, 56, 60],
+];
+const spacingGrid = document.getElementById('spacing-grid');
+spacingGrid.innerHTML = '';
+spacingTokens.forEach(([name, dense, relaxed, accessible]) => {
+  const row = document.createElement('div');
+  row.className = 'space-row';
+  row.innerHTML = `
+    <span class="space-tag">${name}</span>
+    <span class="space-tag tabular">d ${dense} / r ${relaxed} / a ${accessible}</span>
+    <div class="space-bar" style="width: var(--${name})"></div>
+  `;
+  spacingGrid.appendChild(row);
+});
+
+/* Initial render */
+renderSwatches();
+updateNote();
+</script>
+
+</body>
+</html>

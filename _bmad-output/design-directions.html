@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Secretary — Design Direction Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ---------- TOKENS (locked from Step 8) ---------- */
+:root, .theme-light {
+  --color-bg: #fafafa; --color-surface: #ffffff; --color-surface-2: #f4f4f6;
+  --color-fg: #15151a; --color-muted: #6e6e76;
+  --color-border: #e6e6ea; --color-border-strong: #d4d4da;
+  --color-accent: #4f46e5; --color-accent-fg: #ffffff; --color-accent-soft: #eef2ff;
+  --color-success: #16a34a; --color-warning: #b45309; --color-danger: #dc2626;
+  --color-disabled-bg: #f4f4f6; --color-disabled-fg: #a8a8b0;
+  --focus-ring-on-accent: #ffffff;
+  --shadow-frame: 0 8px 30px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+}
+.theme-dark {
+  --color-bg: #131316; --color-surface: #1c1c20; --color-surface-2: #21212a;
+  --color-fg: #e8e8ec; --color-muted: #8a8a92;
+  --color-border: #2a2a30; --color-border-strong: #3a3a42;
+  --color-accent: #818cf8; --color-accent-fg: #0b0b0d; --color-accent-soft: #1e1b4b;
+  --color-success: #22c55e; --color-warning: #f59e0b; --color-danger: #ef4444;
+  --color-disabled-bg: #21212a; --color-disabled-fg: #52525a;
+  --focus-ring-on-accent: #ffffff;
+  --shadow-frame: 0 8px 30px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.2);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+  background: var(--color-bg); color: var(--color-fg);
+  font-family: 'Geist', system-ui, sans-serif; font-size: 14px; line-height: 1.5;
+  padding: 32px;
+  transition: background 200ms, color 200ms;
+}
+.mono { font-family: 'Geist Mono', monospace; }
+h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.018em; }
+h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.005em; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--color-border); }
+h3 { font-size: 16px; font-weight: 600; margin: 0 0 6px; }
+p { color: var(--color-fg); max-width: 70ch; }
+
+button {
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  background: var(--color-surface); color: var(--color-fg);
+  border: 1px solid var(--color-border); border-radius: 6px;
+  padding: 6px 12px; cursor: pointer; min-height: 28px;
+}
+button:hover { border-color: var(--color-border-strong); }
+button.primary { background: var(--color-accent); color: var(--color-accent-fg); border-color: var(--color-accent); }
+button.primary:focus-visible { outline: 2px solid var(--focus-ring-on-accent); outline-offset: 2px; box-shadow: 0 0 0 4px var(--color-accent); }
+
+/* ---------- TOP CONTROLS ---------- */
+.controls {
+  position: sticky; top: 16px; z-index: 200;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 10px; padding: 12px 16px;
+  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 32px; box-shadow: var(--shadow-frame);
+}
+.controls h1 { font-size: 16px; font-weight: 600; }
+.controls .spacer { flex: 1; }
+.controls .seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: 6px; overflow: hidden; }
+.controls .seg button { border: none; border-radius: 0; padding: 4px 10px; font-size: 12px; }
+.controls .seg button.active { background: var(--color-accent-soft); color: var(--color-accent); }
+.controls .meta { font-size: 12px; color: var(--color-muted); }
+
+/* ---------- DIRECTION FRAME (mock browser window) ---------- */
+.direction { margin-bottom: 56px; }
+.direction-header { display: flex; gap: 12px; align-items: baseline; margin-bottom: 12px; flex-wrap: wrap; }
+.direction-tag { font-family: 'Geist Mono', monospace; font-size: 11px; padding: 2px 8px; background: var(--color-accent-soft); color: var(--color-accent); border-radius: 4px; font-weight: 500; }
+.direction-name { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.direction-tagline { color: var(--color-muted); font-size: 13px; }
+.direction-best-for { font-size: 12px; color: var(--color-muted); margin-bottom: 16px; }
+
+.frame {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow-frame);
+  height: 600px;
+  display: flex; flex-direction: column;
+}
+.frame-bar { background: var(--color-surface-2); padding: 8px 12px; display: flex; gap: 6px; align-items: center; border-bottom: 1px solid var(--color-border); }
+.frame-bar .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-border-strong); }
+.frame-bar .url { flex: 1; text-align: center; font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--color-muted); }
+.frame-bar .vertical-toggle { display: inline-flex; gap: 4px; }
+.frame-bar .vertical-toggle button { font-size: 10px; padding: 2px 8px; min-height: 0; border-radius: 4px; }
+.frame-bar .vertical-toggle button.active { background: var(--color-accent-soft); color: var(--color-accent); border-color: var(--color-accent); }
+.frame-body { flex: 1; overflow: hidden; display: flex; }
+
+/* ---------- COMMON IN-APP STYLES (constrained inside .frame) ---------- */
+.frame .sidebar {
+  width: 220px; flex-shrink: 0; background: var(--color-surface);
+  border-right: 1px solid var(--color-border); padding: 12px 8px;
+  display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto;
+}
+.frame .sidebar .brand { padding: 6px 8px 14px; font-weight: 700; font-size: 14px; letter-spacing: -0.01em; }
+.frame .sidebar .nav-item { padding: 6px 10px; font-size: 13px; border-radius: 5px; color: var(--color-muted); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.frame .sidebar .nav-item.active { background: var(--color-accent-soft); color: var(--color-accent); font-weight: 500; }
+.frame .sidebar .nav-item:hover { background: var(--color-surface-2); }
+.frame .sidebar .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); padding: 14px 10px 4px; }
+.frame .sidebar .nav-icon { width: 14px; height: 14px; opacity: 0.7; flex-shrink: 0; }
+.frame .sidebar .footer { margin-top: auto; padding: 8px; display: flex; align-items: center; gap: 8px; }
+.frame .sidebar .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--color-accent); color: var(--color-accent-fg); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+
+.frame .topbar {
+  height: 44px; padding: 0 16px; border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface); display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.frame .topbar .crumb { color: var(--color-muted); font-size: 13px; }
+.frame .topbar .crumb strong { color: var(--color-fg); font-weight: 500; }
+.frame .topbar .cmdk {
+  flex: 1; max-width: 360px; height: 28px;
+  border: 1px solid var(--color-border); border-radius: 6px;
+  display: flex; align-items: center; padding: 0 10px; gap: 8px;
+  font-size: 12px; color: var(--color-muted); background: var(--color-surface-2);
+}
+.frame .topbar .cmdk kbd { font-family: 'Geist Mono', monospace; font-size: 10.5px; padding: 1px 5px; border: 1px solid var(--color-border); border-radius: 3px; background: var(--color-surface); color: var(--color-muted); }
+
+.frame .main { flex: 1; overflow-y: auto; background: var(--color-bg); }
+.frame .main .pad { padding: 20px 24px; }
+
+/* RecordingStatusPill primitives (used in topbars) */
+.rec-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--color-accent-soft); color: var(--color-accent);
+  border: 1px solid var(--color-accent); border-radius: 999px;
+  padding: 4px 10px; font-size: 11px; font-weight: 500; cursor: pointer;
+}
+.rec-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-danger); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
+
+/* Citation chip */
+.cit {
+  display: inline-flex; align-items: center; padding: 0 5px;
+  background: var(--color-accent-soft); color: var(--color-accent);
+  border: 1px solid var(--color-accent); border-radius: 4px;
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  margin: 0 2px; vertical-align: middle; cursor: pointer;
+}
+
+/* Meeting list rows */
+.list { display: flex; flex-direction: column; }
+.list-item {
+  padding: 10px 12px; border-bottom: 1px solid var(--color-border);
+  cursor: pointer; transition: background 150ms;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.list-item:hover { background: var(--color-surface-2); }
+.list-item.active { background: var(--color-accent-soft); border-left: 3px solid var(--color-accent); padding-left: 9px; }
+.list-item .title { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+.list-item .meta { font-size: 11px; color: var(--color-muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.list-item .meta .module { padding: 1px 6px; background: var(--color-surface-2); border-radius: 4px; font-size: 10px; }
+.list-item.active .meta .module { background: var(--color-surface); }
+.list-item .snippet { font-size: 11.5px; color: var(--color-muted); line-height: 1.4; max-height: 2em; overflow: hidden; }
+
+/* Receipt content */
+.receipt-eyebrow { font-size: 11px; color: var(--color-muted); margin-bottom: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.receipt-badge { padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 500; }
+.receipt-badge.success { color: var(--color-success); background: color-mix(in srgb, var(--color-success) 12%, transparent); border: 1px solid var(--color-success); }
+.receipt-badge.warning { color: var(--color-warning); background: color-mix(in srgb, var(--color-warning) 12%, transparent); border: 1px solid var(--color-warning); }
+.receipt-title { font-size: 22px; font-weight: 700; letter-spacing: -0.018em; line-height: 1.2; margin-bottom: 4px; }
+.receipt-time { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--color-muted); margin-bottom: 16px; }
+.section-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); margin: 16px 0 6px; }
+.receipt-prose { font-size: 14px; line-height: 1.65; max-width: 60ch; margin-bottom: 4px; }
+.action { display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 13.5px; }
+.action input { accent-color: var(--color-accent); margin: 0; }
+.action-meta { font-family: 'Geist Mono', monospace; font-size: 10.5px; color: var(--color-muted); margin-left: auto; }
+.btn-row { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+
+/* Card feed */
+.card-feed { display: flex; flex-direction: column; gap: 12px; padding: 20px; max-width: 720px; margin: 0 auto; }
+.feed-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 10px; padding: 16px 20px; cursor: pointer;
+  transition: border-color 150ms, transform 150ms;
+}
+.feed-card:hover { border-color: var(--color-border-strong); }
+.feed-card .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.feed-card .head .t { font-size: 15.5px; font-weight: 600; letter-spacing: -0.005em; }
+.feed-card .head .time { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--color-muted); white-space: nowrap; }
+.feed-card .head-meta { font-size: 11px; color: var(--color-muted); display: flex; gap: 8px; }
+.feed-card .body { font-size: 13px; line-height: 1.6; color: var(--color-fg); margin-top: 8px; max-width: 60ch; }
+
+/* Search-first home */
+.search-home { padding: 80px 32px 32px; max-width: 720px; margin: 0 auto; text-align: center; }
+.search-home h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.018em; margin: 0 0 24px; border: none; padding: 0; }
+.big-search {
+  width: 100%; height: 64px; padding: 0 20px;
+  font-family: inherit; font-size: 16px;
+  background: var(--color-surface); color: var(--color-fg);
+  border: 1px solid var(--color-border); border-radius: 12px;
+  display: flex; align-items: center; gap: 12px;
+  text-align: left;
+}
+.big-search:focus-within { border-color: var(--color-accent); box-shadow: 0 0 0 4px var(--color-accent-soft); }
+.big-search input { flex: 1; background: transparent; border: none; outline: none; font-family: inherit; font-size: 16px; color: var(--color-fg); }
+.big-search input::placeholder { color: var(--color-muted); }
+.search-hints { display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+.hint { padding: 6px 12px; border: 1px solid var(--color-border); border-radius: 999px; font-size: 11.5px; color: var(--color-muted); cursor: pointer; }
+.hint:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.recent { margin-top: 48px; text-align: left; }
+.recent-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 8px; }
+
+/* Two-pane (D2 / D1-receipt) */
+.two-pane { display: flex; height: 100%; }
+.two-pane .pane-list { width: 280px; flex-shrink: 0; border-right: 1px solid var(--color-border); overflow-y: auto; background: var(--color-surface); }
+.two-pane .pane-list .pane-head { padding: 12px 14px; font-size: 12px; font-weight: 500; color: var(--color-muted); border-bottom: 1px solid var(--color-border); background: var(--color-surface-2); }
+.two-pane .pane-detail { flex: 1; overflow-y: auto; }
+.two-pane .pane-detail .pad { padding: 20px 24px; }
+
+/* ---------- COMPONENT VARIATION SECTION ---------- */
+.variant-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 16px 0 32px; }
+@media (max-width: 900px) { .variant-grid { grid-template-columns: 1fr; } }
+.variant-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 10px; padding: 24px; min-height: 200px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.variant-card .v-name { font-size: 13px; font-weight: 600; }
+.variant-card .v-tagline { font-size: 12px; color: var(--color-muted); }
+.variant-stage {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: var(--color-bg); border-radius: 8px;
+  border: 1px dashed var(--color-border);
+}
+.variant-card .v-when { font-size: 11px; color: var(--color-muted); padding-top: 8px; border-top: 1px solid var(--color-border); }
+
+/* RecordingStatusPill variations */
+.rec-v1 { /* current — pulse dot */
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--color-accent-soft); color: var(--color-accent);
+  border: 1px solid var(--color-accent); border-radius: 999px;
+  padding: 6px 14px; font-size: 12px; font-weight: 500;
+}
+.rec-v1 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-danger); animation: pulse 2s ease-in-out infinite; }
+
+.rec-v2 { /* waveform inline */
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--color-accent-soft); color: var(--color-accent);
+  border: 1px solid var(--color-accent); border-radius: 999px;
+  padding: 6px 14px; font-size: 12px; font-weight: 500;
+}
+.rec-v2 .wave { display: inline-flex; gap: 2px; align-items: center; height: 16px; }
+.rec-v2 .bar { width: 2.5px; background: var(--color-accent); border-radius: 1px; animation: wave 1.2s ease-in-out infinite; }
+.rec-v2 .bar:nth-child(1) { animation-delay: 0.0s; height: 6px; }
+.rec-v2 .bar:nth-child(2) { animation-delay: 0.15s; height: 12px; }
+.rec-v2 .bar:nth-child(3) { animation-delay: 0.3s; height: 10px; }
+.rec-v2 .bar:nth-child(4) { animation-delay: 0.45s; height: 14px; }
+.rec-v2 .bar:nth-child(5) { animation-delay: 0.6s; height: 8px; }
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.5); }
+  50% { transform: scaleY(1); }
+}
+
+.rec-v3 { /* gradient ring */
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--color-border); border-radius: 999px;
+  padding: 4px 14px 4px 6px; font-size: 12px; font-weight: 500;
+  background: var(--color-surface);
+}
+.rec-v3 .ring {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 30%, transparent), var(--color-accent));
+  position: relative;
+  animation: spin 3s linear infinite;
+}
+.rec-v3 .ring::after {
+  content: ""; position: absolute; inset: 3px; border-radius: 50%;
+  background: var(--color-surface);
+}
+.rec-v3 .ring::before {
+  content: ""; position: absolute; inset: 7px; border-radius: 50%;
+  background: var(--color-danger); z-index: 2;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* CitationChip variations */
+.cit-v1 { /* current — generic chip */
+  display: inline-flex; align-items: center; padding: 0 6px;
+  background: var(--color-accent-soft); color: var(--color-accent);
+  border: 1px solid var(--color-accent); border-radius: 4px;
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  cursor: pointer;
+}
+
+.cit-v2 { /* iconic with quote-mark glyph */
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0 7px 0 4px; cursor: pointer;
+  background: var(--color-accent-soft); color: var(--color-accent);
+  border: 1px solid var(--color-accent); border-radius: 999px;
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  position: relative;
+}
+.cit-v2 .glyph {
+  width: 14px; height: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.cit-v2 .glyph svg { width: 11px; height: 11px; }
+
+.cit-v3 { /* superscript ref number */
+  display: inline-block; cursor: pointer;
+  color: var(--color-accent);
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  vertical-align: super;
+  font-weight: 600;
+  padding: 0 1px;
+  border-bottom: 1px dotted var(--color-accent);
+}
+
+/* Inline citation stage (shows context) */
+.citation-stage {
+  font-family: 'Geist', sans-serif; font-size: 13.5px; line-height: 1.65;
+  color: var(--color-fg); text-align: left;
+}
+
+/* ---------- HELPERS ---------- */
+.hidden { display: none !important; }
+
+/* Selection summary */
+.selection-summary {
+  background: var(--color-accent-soft); border: 1px solid var(--color-accent);
+  border-radius: 12px; padding: 24px; margin-top: 32px;
+}
+.selection-summary h2 { color: var(--color-accent); border: none; padding: 0; margin: 0 0 12px; }
+.selection-summary p { color: var(--color-fg); }
+
+.note-box {
+  background: var(--color-surface); border: 1px solid var(--color-warning);
+  border-left: 3px solid var(--color-warning); border-radius: 8px;
+  padding: 14px 16px; margin: 16px 0;
+  font-size: 13px; color: var(--color-fg);
+}
+.note-box strong { color: var(--color-warning); }
+</style>
+</head>
+<body class="theme-light">
+
+<div class="controls">
+  <h1>AI Secretary — Design Direction Mockups</h1>
+  <div class="seg" id="theme-seg">
+    <button data-theme="light" class="active">Light</button>
+    <button data-theme="dark">Dark</button>
+  </div>
+  <div class="spacer"></div>
+  <span class="meta mono">Geist · indigo · Step 9</span>
+</div>
+
+<p style="margin-bottom: 32px; color: var(--color-muted); max-width: 70ch;">
+  Four layout/IA directions, plus distinctive visual identity exploration for
+  the three Step 8 surfaces. Aesthetic is locked across all directions
+  (Geist, indigo, monochrome restraint, Linear-pro-tool register) — what
+  varies is structure, navigation, and component identity. Toggle theme
+  above; toggle vertical (Sales / Psychology) on each frame.
+</p>
+
+<h2>Section A — Layout Directions</h2>
+
+<!-- =======================================================
+     D1: Inbox + main pane (Linear-style)
+     ======================================================= -->
+<div class="direction" id="d1">
+  <div class="direction-header">
+    <span class="direction-tag mono">D1</span>
+    <span class="direction-name">Inbox + main pane</span>
+    <span class="direction-tagline">Linear-style — persistent left sidebar + content pane</span>
+  </div>
+  <div class="direction-best-for">Best for: power users, admins, supervisors. Familiar mental model from Linear, Notion, Slack. Easy to add new top-level surfaces (Today, My Actions, Search, Settings) without crowding.</div>
+
+  <div class="frame" data-vertical="sales">
+    <div class="frame-bar">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">app.aisecretary.com/today</span>
+      <div class="vertical-toggle">
+        <button class="vt-btn active" data-v="sales">Sales receipt</button>
+        <button class="vt-btn" data-v="psychology">Psychology receipt</button>
+      </div>
+    </div>
+    <div class="frame-body">
+      <div class="sidebar">
+        <div class="brand">AI Secretary</div>
+        <div class="nav-item active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          Today
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          My Actions
+          <span style="margin-left:auto; background: var(--color-accent); color: var(--color-accent-fg); padding: 0 6px; border-radius: 8px; font-size: 10px; font-weight: 600;">3</span>
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Search
+        </div>
+        <div class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Chat with corpus
+        </div>
+        <div class="section-label">Recordings</div>
+        <div class="nav-item">All meetings</div>
+        <div class="nav-item">Shared with me</div>
+        <div class="nav-item">Imported</div>
+        <div class="section-label">Workspace</div>
+        <div class="nav-item">Acme Co.</div>
+        <div class="nav-item">Settings</div>
+        <div class="footer">
+          <div class="avatar">A</div>
+          <div style="font-size: 11.5px;">Anthony · Acme Co.</div>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+        <div class="topbar">
+          <span class="crumb">Today / <strong>Discovery call — Acme Corp</strong></span>
+          <div class="cmdk"><span style="opacity:0.7;">Search corpus…</span><span style="margin-left:auto; display:flex; gap:4px;"><kbd>⌘</kbd><kbd>K</kbd></span></div>
+          <div class="rec-pill"><span class="dot"></span>Recording <span class="mono">12:04</span></div>
+        </div>
+        <div class="main">
+          <div class="pad">
+            <!-- SALES RECEIPT -->
+            <div class="receipt-content sales-content">
+              <div class="receipt-eyebrow">
+                <span class="receipt-badge success">● Sales</span>
+                <span>·</span><span>Receipt ready</span>
+              </div>
+              <div class="receipt-title">Discovery call — Acme Corp</div>
+              <div class="receipt-time">2026-04-29 · 14:32 → 15:14 · 42 min</div>
+              <div class="section-label">Summary</div>
+              <div class="receipt-prose">
+                The buyer raised pricing concerns mid-call and pushed back on the per-seat model<span class="cit">14:32</span>. Strong interest in audit-log capabilities; asked specifically about SOC2 Type II evidence pre-contract<span class="cit">22:08</span>. Next step: send security questionnaire and propose a 90-day pilot with usage-based pricing.
+              </div>
+              <div class="section-label">Action items</div>
+              <div class="action"><input type="checkbox"> Send SOC2 evidence packet to procurement <span class="action-meta">@you · today</span></div>
+              <div class="action"><input type="checkbox"> Draft pilot proposal — usage pricing <span class="action-meta">@you · Fri</span></div>
+              <div class="action"><input type="checkbox"> Loop in legal on data-residency <span class="action-meta">@legal · Mon</span></div>
+              <div class="btn-row">
+                <button class="primary">Share clip</button>
+                <button>Push to HubSpot</button>
+                <button>Open transcript</button>
+              </div>
+            </div>
+            <!-- PSYCHOLOGY RECEIPT -->
+            <div class="receipt-content psych-content hidden">
+              <div class="receipt-eyebrow">
+                <span class="receipt-badge warning">● Psychology</span>
+                <span>·</span><span>Generating session note... ready in ~15 min</span>
+              </div>
+              <div class="receipt-title">Therapy session 06 — J. Reyes</div>
+              <div class="receipt-time">2026-04-29 · 10:00 → 10:50 · 50 min · in person</div>
+              <div class="section-label">Subjective</div>
+              <div class="receipt-prose">
+                Client reported continued sleep disruption since last session, averaging 4–5 hours per night<span class="cit">04:18</span>. Cited increased work pressure as primary stressor.
+              </div>
+              <div class="section-label">Assessment</div>
+              <div class="receipt-prose">
+                Symptoms continue to align with adjustment disorder<span class="cit">28:42</span>. Safety plan from session 03 reviewed and remains in place.
+              </div>
+              <div class="section-label">Plan</div>
+              <div class="action"><input type="checkbox"> Continue weekly sessions <span class="action-meta">@you</span></div>
+              <div class="action"><input type="checkbox"> Sleep hygiene worksheet next session <span class="action-meta">@you · next session</span></div>
+              <div class="btn-row">
+                <button>Edit and sign</button>
+                <button>View transcript</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =======================================================
+     D2: List + detail (mail-app)
+     ======================================================= -->
+<div class="direction" id="d2">
+  <div class="direction-header">
+    <span class="direction-tag mono">D2</span>
+    <span class="direction-name">List + detail</span>
+    <span class="direction-tagline">Mail-app style — meeting list always visible alongside the receipt</span>
+  </div>
+  <div class="direction-best-for">Best for: sales reps cycling through many calls, support agents reviewing tickets, anyone who navigates between meetings frequently. Familiar from Apple Mail, Gmail (split view), Linear's issue list.</div>
+
+  <div class="frame" data-vertical="sales">
+    <div class="frame-bar">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">app.aisecretary.com/meetings</span>
+      <div class="vertical-toggle">
+        <button class="vt-btn active" data-v="sales">Sales</button>
+        <button class="vt-btn" data-v="psychology">Psychology</button>
+      </div>
+    </div>
+    <div style="background: var(--color-surface); padding: 8px 16px; border-bottom: 1px solid var(--color-border); display:flex; align-items:center; gap:12px;">
+      <span style="font-weight: 700; font-size: 14px; letter-spacing:-0.01em;">AI Secretary</span>
+      <div class="cmdk" style="height:28px; max-width:340px;"><span style="opacity:0.7;">Search corpus…</span><span style="margin-left:auto; display:flex; gap:4px;"><kbd>⌘</kbd><kbd>K</kbd></span></div>
+      <div class="rec-pill" style="margin-left:auto;"><span class="dot"></span>Recording <span class="mono">12:04</span></div>
+      <div style="width:26px; height:26px; border-radius:50%; background: var(--color-accent); color: var(--color-accent-fg); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">A</div>
+    </div>
+    <div class="frame-body two-pane">
+      <div class="pane-list">
+        <div class="pane-head">Today · 3 meetings</div>
+        <div class="list">
+          <div class="list-item active">
+            <div class="title">Discovery call — Acme Corp</div>
+            <div class="meta"><span class="module">Sales</span><span class="mono">14:32</span><span>· 42 min</span></div>
+            <div class="snippet">Buyer pushed back on per-seat pricing, strong interest in audit-log capabilities…</div>
+          </div>
+          <div class="list-item">
+            <div class="title">Therapy session 06 — J. Reyes</div>
+            <div class="meta"><span class="module">Psychology</span><span class="mono">10:00</span><span>· 50 min</span></div>
+            <div class="snippet">Client reported continued sleep disruption since last session, averaging 4–5 hours per night…</div>
+          </div>
+          <div class="list-item">
+            <div class="title">Sprint planning, week 17</div>
+            <div class="meta"><span class="module">PM</span><span class="mono">09:00</span><span>· 31 min</span></div>
+            <div class="snippet">Discussed velocity adjustment given backend hiring delay; team agreed to defer the…</div>
+          </div>
+          <div class="pane-head" style="margin-top:8px;">Yesterday · 5 meetings</div>
+          <div class="list-item">
+            <div class="title">Weekly 1:1 — Maya / Linus</div>
+            <div class="meta"><span class="module">General</span><span class="mono">15:30</span><span>· 28 min</span></div>
+            <div class="snippet">Covered Q2 priorities, blockers on the integration story…</div>
+          </div>
+          <div class="list-item">
+            <div class="title">Customer interview — Beta cohort</div>
+            <div class="meta"><span class="module">Support</span><span class="mono">11:00</span><span>· 45 min</span></div>
+            <div class="snippet">Three users cited the receipt streaming as the moment they got it. Two flagged…</div>
+          </div>
+        </div>
+      </div>
+      <div class="pane-detail">
+        <div class="pad">
+          <div class="receipt-content sales-content">
+            <div class="receipt-eyebrow">
+              <span class="receipt-badge success">● Sales</span>
+              <span>·</span><span>Receipt ready</span>
+            </div>
+            <div class="receipt-title">Discovery call — Acme Corp</div>
+            <div class="receipt-time">2026-04-29 · 14:32 → 15:14 · 42 min · 3 participants</div>
+            <div class="section-label">Summary</div>
+            <div class="receipt-prose">
+              The buyer raised pricing concerns mid-call and pushed back on the per-seat model<span class="cit">14:32</span>. They expressed strong interest in audit-log capabilities and asked specifically about SOC2 Type II evidence pre-contract<span class="cit">22:08</span>. Next step: send security questionnaire and propose a 90-day pilot with usage-based pricing.
+            </div>
+            <div class="section-label">Action items</div>
+            <div class="action"><input type="checkbox"> Send SOC2 evidence packet to procurement <span class="action-meta">@you · today</span></div>
+            <div class="action"><input type="checkbox"> Draft pilot proposal — usage pricing <span class="action-meta">@you · Fri</span></div>
+            <div class="action"><input type="checkbox"> Loop in legal on data-residency <span class="action-meta">@legal · Mon</span></div>
+            <div class="btn-row">
+              <button class="primary">Share clip</button>
+              <button>Push to HubSpot</button>
+            </div>
+          </div>
+          <div class="receipt-content psych-content hidden">
+            <div class="receipt-eyebrow">
+              <span class="receipt-badge warning">● Psychology</span>
+              <span>·</span><span>Generating session note... ready in ~15 min</span>
+            </div>
+            <div class="receipt-title">Therapy session 06 — J. Reyes</div>
+            <div class="receipt-time">2026-04-29 · 10:00 → 10:50 · 50 min · in person</div>
+            <div class="section-label">Subjective</div>
+            <div class="receipt-prose">
+              Client reported continued sleep disruption since last session, averaging 4–5 hours per night<span class="cit">04:18</span>.
+            </div>
+            <div class="section-label">Assessment</div>
+            <div class="receipt-prose">
+              Symptoms continue to align with adjustment disorder<span class="cit">28:42</span>. Safety plan from session 03 remains in place.
+            </div>
+            <div class="section-label">Plan</div>
+            <div class="action"><input type="checkbox"> Continue weekly sessions <span class="action-meta">@you</span></div>
+            <div class="btn-row">
+              <button>Edit and sign</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =======================================================
+     D3: Card feed (Granola-style, single-user mode)
+     ======================================================= -->
+<div class="direction" id="d3">
+  <div class="direction-header">
+    <span class="direction-tag mono">D3</span>
+    <span class="direction-name">Card feed</span>
+    <span class="direction-tagline">Granola-style — single-column flow, minimal chrome</span>
+  </div>
+  <div class="direction-best-for">Best for: single-user mode (solo consultants, individual professionals, General module). No persistent sidebar; receipts feel like notes; receipt opens via card-tap or back-button. Same component library; reduced surface visibility.</div>
+
+  <div class="frame" data-vertical="sales">
+    <div class="frame-bar">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">app.aisecretary.com/</span>
+      <div class="vertical-toggle">
+        <button class="vt-btn active" data-v="sales">Sales</button>
+        <button class="vt-btn" data-v="psychology">Psychology</button>
+      </div>
+    </div>
+    <div style="background: var(--color-surface); padding: 14px 32px; border-bottom: 1px solid var(--color-border); display:flex; align-items:center; gap:12px; justify-content:space-between;">
+      <span style="font-weight:700; font-size:14px; letter-spacing:-0.01em;">AI Secretary</span>
+      <div class="cmdk" style="height:28px; max-width:300px; flex:0 1 300px;"><span style="opacity:0.7;">Search…</span><span style="margin-left:auto;"><kbd>⌘</kbd><kbd>K</kbd></span></div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div class="rec-pill"><span class="dot"></span>Recording <span class="mono">12:04</span></div>
+        <div style="width:26px; height:26px; border-radius:50%; background: var(--color-accent); color: var(--color-accent-fg); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">A</div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="card-feed">
+        <div class="feed-card sales-content">
+          <div class="head">
+            <div>
+              <div class="t">Discovery call — Acme Corp</div>
+              <div class="head-meta"><span class="receipt-badge success" style="padding:1px 6px; font-size:9.5px;">Sales</span><span>· 42 min · Receipt ready</span></div>
+            </div>
+            <div class="time">2026-04-29 · 14:32</div>
+          </div>
+          <div class="body">
+            The buyer raised pricing concerns mid-call and pushed back on the per-seat model<span class="cit">14:32</span>. Strong interest in audit-log capabilities; asked specifically about SOC2 Type II evidence<span class="cit">22:08</span>. Next step: send security questionnaire and propose a 90-day pilot.
+            <div style="margin-top:10px; padding-top: 10px; border-top:1px solid var(--color-border); display:flex; gap:8px; align-items:center;">
+              <span style="font-size:10.5px; color:var(--color-muted); font-weight:500; text-transform:uppercase; letter-spacing:0.06em;">3 actions</span>
+              <span style="font-size:11.5px; color:var(--color-muted);">Send SOC2 packet · Draft pilot · Loop in legal</span>
+            </div>
+          </div>
+        </div>
+        <div class="feed-card psych-content hidden">
+          <div class="head">
+            <div>
+              <div class="t">Therapy session 06 — J. Reyes</div>
+              <div class="head-meta"><span class="receipt-badge warning" style="padding:1px 6px; font-size:9.5px;">Psychology</span><span>· 50 min · Generating session note... ready in ~15 min</span></div>
+            </div>
+            <div class="time">2026-04-29 · 10:00</div>
+          </div>
+          <div class="body">
+            Client reported continued sleep disruption<span class="cit">04:18</span>. Symptoms continue to align with adjustment disorder<span class="cit">28:42</span>. Safety plan from session 03 reviewed and remains in place.
+          </div>
+        </div>
+        <div class="feed-card">
+          <div class="head">
+            <div>
+              <div class="t">Sprint planning, week 17</div>
+              <div class="head-meta"><span class="receipt-badge success" style="padding:1px 6px; font-size:9.5px;">PM</span><span>· 31 min · Receipt ready</span></div>
+            </div>
+            <div class="time">2026-04-29 · 09:00</div>
+          </div>
+          <div class="body">
+            Discussed velocity adjustment given backend hiring delay; team agreed to defer the entitlements rework to next sprint<span class="cit">06:14</span>.
+          </div>
+        </div>
+        <div class="feed-card">
+          <div class="head">
+            <div>
+              <div class="t">Customer interview — Beta cohort #3</div>
+              <div class="head-meta"><span class="receipt-badge success" style="padding:1px 6px; font-size:9.5px;">Support</span><span>· Yesterday · 45 min</span></div>
+            </div>
+            <div class="time">Yesterday · 11:00</div>
+          </div>
+          <div class="body">
+            Three users cited the receipt streaming as the activation moment. Two flagged confusion around module switching mid-receipt<span class="cit">19:22</span>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =======================================================
+     D4: Search-first
+     ======================================================= -->
+<div class="direction" id="d4">
+  <div class="direction-header">
+    <span class="direction-tag mono">D4</span>
+    <span class="direction-name">Search-first</span>
+    <span class="direction-tagline">Glean / Perplexity-style — search and corpus chat are the home</span>
+  </div>
+  <div class="direction-best-for">Best for: optional power-user mode (Step 6 setting). Activated when the user has &gt; ~50 meetings indexed. Recent meetings panel below the search hero. Receipt opens via search hit.</div>
+
+  <div class="frame" data-vertical="sales">
+    <div class="frame-bar">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">app.aisecretary.com/</span>
+      <div class="vertical-toggle">
+        <button class="vt-btn active" data-v="sales">Sales</button>
+        <button class="vt-btn" data-v="psychology">Psychology</button>
+      </div>
+    </div>
+    <div style="background: var(--color-surface); padding: 12px 24px; border-bottom: 1px solid var(--color-border); display:flex; align-items:center; gap:12px;">
+      <span style="font-weight:700; font-size:14px; letter-spacing:-0.01em;">AI Secretary</span>
+      <span style="font-size:11px; color:var(--color-muted); margin-left:auto;">Power-user mode</span>
+      <div class="rec-pill"><span class="dot"></span>Recording <span class="mono">12:04</span></div>
+      <div style="width:26px; height:26px; border-radius:50%; background: var(--color-accent); color: var(--color-accent-fg); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">A</div>
+    </div>
+    <div class="main">
+      <div class="search-home">
+        <h2>Ask the corpus</h2>
+        <div class="big-search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search 32 meetings or ask anything…">
+          <kbd style="background: var(--color-surface-2); border:1px solid var(--color-border); border-radius:4px; padding:2px 7px; font-size:10.5px; font-family:'Geist Mono',monospace; color:var(--color-muted);">↩</kbd>
+        </div>
+        <div class="search-hints">
+          <div class="hint">"objections about pricing this quarter"</div>
+          <div class="hint">"deals where competitor X came up"</div>
+          <div class="hint">"recurring themes in last 10 sessions"</div>
+        </div>
+        <div class="recent">
+          <div class="recent-label">Recent meetings</div>
+          <div class="list">
+            <div class="list-item sales-content">
+              <div class="title">Discovery call — Acme Corp</div>
+              <div class="meta"><span class="module">Sales</span><span>· 42 min</span><span class="mono">14:32 today</span></div>
+            </div>
+            <div class="list-item psych-content hidden">
+              <div class="title">Therapy session 06 — J. Reyes</div>
+              <div class="meta"><span class="module">Psychology</span><span>· 50 min</span><span class="mono">10:00 today</span></div>
+            </div>
+            <div class="list-item">
+              <div class="title">Sprint planning, week 17</div>
+              <div class="meta"><span class="module">PM</span><span>· 31 min</span><span class="mono">09:00 today</span></div>
+            </div>
+            <div class="list-item">
+              <div class="title">Weekly 1:1 — Maya / Linus</div>
+              <div class="meta"><span class="module">General</span><span>· 28 min</span><span class="mono">Yesterday 15:30</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =======================================================
+     SECTION B: Distinctive Visual Identity
+     ======================================================= -->
+<h2>Section B — Distinctive Visual Identity</h2>
+<p style="margin-bottom: 16px; color: var(--color-muted); max-width: 70ch;">
+  Step 8 commitment: invest pre-launch in distinctive visual signature on three surfaces. Empty-state illustration system is flagged for designer work — HTML mockup would mislead. RecordingStatusPill and CitationChip variations below; pick one of each (or a combination) to lock in.
+</p>
+
+<h3 style="margin-top: 24px;">RecordingStatusPill — 3 takes</h3>
+<div class="variant-grid">
+  <div class="variant-card">
+    <div class="v-name">V1 · Pulse-dot</div>
+    <div class="v-tagline">Conventional. Small red dot pulsing + label + timer.</div>
+    <div class="variant-stage">
+      <div class="rec-v1"><span class="dot"></span>Recording <span class="mono">12:04</span></div>
+    </div>
+    <div class="v-when">Pros: instantly readable, familiar from Loom / Zoom / Voice Memos. Cons: looks like every other recording indicator. Won't differentiate the product in screenshots.</div>
+  </div>
+  <div class="variant-card">
+    <div class="v-name">V2 · Inline waveform <span class="mono" style="color:var(--color-accent);">★</span></div>
+    <div class="v-tagline">Distinctive. Micro waveform animation IN the pill — recording state IS the waveform.</div>
+    <div class="variant-stage">
+      <div class="rec-v2">
+        <span class="wave"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></span>
+        Recording <span class="mono">12:04</span>
+      </div>
+    </div>
+    <div class="v-when">Pros: Voice-Memos-evocative, ambient, distinctive. The waveform IS the recording confirmation. Cons: more rendering work; needs to perform on mobile lock screens too.</div>
+  </div>
+  <div class="variant-card">
+    <div class="v-name">V3 · Gradient ring</div>
+    <div class="v-tagline">Subtle. Rotating gradient ring + center dot. Apple-recording-ring evocative.</div>
+    <div class="variant-stage">
+      <div class="rec-v3"><span class="ring"></span>Recording <span class="mono">12:04</span></div>
+    </div>
+    <div class="v-when">Pros: subtler than pulse, calmer. Cons: rotating motion may conflict with reduced-motion mode; needs a reduced-motion fallback.</div>
+  </div>
+</div>
+
+<h3 style="margin-top: 32px;">CitationChip — 3 takes</h3>
+<p style="font-size:13px; color:var(--color-muted); margin-bottom: 12px;">Sample sentence below each variant shows how it reads inline.</p>
+<div class="variant-grid">
+  <div class="variant-card">
+    <div class="v-name">V1 · Generic chip</div>
+    <div class="v-tagline">Conventional. Rectangular chip with timestamp inside.</div>
+    <div class="variant-stage" style="flex-direction:column; gap:14px;">
+      <span class="cit-v1">14:32</span>
+      <div class="citation-stage">The buyer raised pricing concerns mid-call <span class="cit-v1">14:32</span>. They expressed strong interest in audit-log capabilities <span class="cit-v1">22:08</span>.</div>
+    </div>
+    <div class="v-when">Pros: clear, scannable. Cons: looks like any tag/badge in the product; competes visually with module badges.</div>
+  </div>
+  <div class="variant-card">
+    <div class="v-name">V2 · Iconic with glyph <span class="mono" style="color:var(--color-accent);">★</span></div>
+    <div class="v-tagline">Distinctive. Speaker glyph + timestamp in pill shape.</div>
+    <div class="variant-stage" style="flex-direction:column; gap:14px;">
+      <span class="cit-v2"><span class="glyph"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 9V5a3 3 0 00-6 0v4M5 9h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2z" stroke="currentColor" fill="none" stroke-width="2"/><circle cx="12" cy="14" r="2"/></svg></span>14:32</span>
+      <div class="citation-stage">The buyer raised pricing concerns mid-call <span class="cit-v2"><span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V6a3 3 0 116 0v6a6 6 0 11-12 0V8"/></svg></span>14:32</span>. Audit-log capabilities <span class="cit-v2"><span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V6a3 3 0 116 0v6a6 6 0 11-12 0V8"/></svg></span>22:08</span>.</div>
+    </div>
+    <div class="v-when">Pros: distinguishes citations from any other badge in the product; the glyph signals "this is a quote you can listen to." Cons: more visual weight inline; risks looking cluttered if a paragraph has many citations.</div>
+  </div>
+  <div class="variant-card">
+    <div class="v-name">V3 · Superscript ref</div>
+    <div class="v-tagline">Restrained. Academic-style superscript number, dotted underline.</div>
+    <div class="variant-stage" style="flex-direction:column; gap:14px;">
+      <span class="cit-v3">14:32</span>
+      <div class="citation-stage">The buyer raised pricing concerns mid-call<span class="cit-v3">¹</span>. They expressed strong interest in audit-log capabilities<span class="cit-v3">²</span>. Pre-contract SOC2 evidence requested<span class="cit-v3">³</span>.</div>
+    </div>
+    <div class="v-when">Pros: minimal, doesn't break reading flow, very Perplexity-academic. Cons: hides the timestamp inline; user has to hover/click to see when in the recording. Less glanceable.</div>
+  </div>
+</div>
+
+<h3 style="margin-top: 32px;">First-receipt empty state — illustration system</h3>
+<div class="note-box">
+  <strong>Flagged for designer work.</strong> Custom illustrations require an actual illustrator and brand-design pass — HTML/CSS mockup would mislead about the visual outcome. Recommended deliverables: 3 hand-drawn illustration concepts for the sample-meeting library, 2 motion illustrations for the streaming-receipt skeleton states, 1 hero illustration for first-launch empty state. Hand off to designer in <strong>parallel with Step 9</strong>; lock direction before component build-out begins.
+</div>
+
+<!-- =======================================================
+     SELECTION SUMMARY
+     ======================================================= -->
+<div class="selection-summary">
+  <h2 style="margin-top:0;">Selection prompt</h2>
+  <p>After exploring all four directions and component variations:</p>
+  <ol style="margin: 12px 0 12px 20px; line-height: 1.7;">
+    <li><strong>Layout direction</strong> — pick D1 / D2 / D3 / D4, or call out a combination (e.g. "D1 as default; D3 when single-user mode is active; D4 as power-user toggle")</li>
+    <li><strong>RecordingStatusPill</strong> — V1 / V2 / V3</li>
+    <li><strong>CitationChip</strong> — V1 / V2 / V3</li>
+    <li><strong>Illustration brief</strong> — confirm flagging for designer work, or skip illustrations entirely for V1</li>
+  </ol>
+  <p style="margin-top: 12px; font-size: 12px; color: var(--color-muted);">My picks (★ marked above): <strong>D1 as default + D3 in single-user mode + D4 as power-user toggle</strong>; <strong>RecordingStatusPill V2 (waveform)</strong> — best signature; <strong>CitationChip V2 (iconic)</strong> — distinguishes from module badges, signals listenability; <strong>illustrations flagged for designer</strong>.</p>
+</div>
+
+<script>
+const themeSeg = document.getElementById('theme-seg');
+themeSeg.addEventListener('click', e => {
+  if (!e.target.matches('button')) return;
+  const theme = e.target.dataset.theme;
+  document.body.classList.remove('theme-light', 'theme-dark');
+  document.body.classList.add(`theme-${theme}`);
+  for (const b of themeSeg.querySelectorAll('button')) {
+    b.classList.toggle('active', b.dataset.theme === theme);
+  }
+});
+
+// Vertical toggle per frame
+document.querySelectorAll('.vertical-toggle').forEach(t => {
+  t.addEventListener('click', e => {
+    if (!e.target.matches('button')) return;
+    const v = e.target.dataset.v;
+    const frame = e.target.closest('.frame');
+    frame.dataset.vertical = v;
+    for (const b of t.querySelectorAll('button')) {
+      b.classList.toggle('active', b.dataset.v === v);
+    }
+    frame.querySelectorAll('.sales-content').forEach(el => el.classList.toggle('hidden', v !== 'sales'));
+    frame.querySelectorAll('.psych-content').forEach(el => el.classList.toggle('hidden', v !== 'psychology'));
+  });
+});
+</script>
+
+</body>
+</html>
