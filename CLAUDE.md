@@ -4,7 +4,7 @@
 
 AI Secretary is a Meeting Intelligence & Decision Platform. It captures meetings (in-person via mobile/web, online via Zoom/Teams bots), transcribes them, runs vertical-specific AI analysis (sales, HR, education, medical, support, PM, psychology, general), and exposes everything through a searchable, RAG-chattable knowledge base. Multi-tenant SaaS with customer-owned-cloud and on-prem deployment topologies.
 
-**Architecture source of truth:** [`docs/architecture.md`](docs/architecture.md). When in doubt, that's the contract.
+**Architecture source of truth:** [`docs/architecture.md`](docs/architecture.md) PLUS [`_bmad-output/planning-artifacts/arch-addendums.md`](_bmad-output/planning-artifacts/arch-addendums.md). The addendums extend (not replace) the locked architecture with 8 UX-driven patterns added 2026-04-29 — token build pipeline, ARIA streaming, F5-CRM mechanics, F2-admin FSM, heartbeat detection, resumable upload retry, region-aware EU consent, cross-tenant audit-log writes. ADRs 0002–0006 are PROPOSED inside the addendums doc; promotion to `docs/decisions/` happens after first-implementation validates each pattern. When in doubt, both docs are the contract.
 
 ## Tech Stack
 
@@ -130,10 +130,17 @@ AI Secretary is a Meeting Intelligence & Decision Platform. It captures meetings
 
 ## Where Things Live
 
-- **Architecture decisions:** [`docs/architecture.md`](docs/architecture.md)
+- **Architecture decisions:** [`docs/architecture.md`](docs/architecture.md) + [`_bmad-output/planning-artifacts/arch-addendums.md`](_bmad-output/planning-artifacts/arch-addendums.md) (8 UX-driven addendums; ADRs 0002–0006 PROPOSED)
 - **Product spec:** [`docs/mini-prd.md`](docs/mini-prd.md)
 - **Original brief:** [`docs/input-spec.md`](docs/input-spec.md)
-- **ADRs (deviations):** [`docs/decisions/`](docs/decisions/)
+- **UX Design Specification:** [`_bmad-output/planning-artifacts/ux-design-specification.md`](_bmad-output/planning-artifacts/ux-design-specification.md) (locked 14-step BMAD `create-ux-design` output)
+- **Epics + stories:** [`_bmad-output/planning-artifacts/epics.md`](_bmad-output/planning-artifacts/epics.md) (82 FRs / 15 epics / 82 inline stories — step 2 of `create-epics-and-stories`)
+- **Reconciliation note:** [`_bmad-output/planning-artifacts/reconciliation-note.md`](_bmad-output/planning-artifacts/reconciliation-note.md) (cross-agent integration record; consumed by `create-story` per sprint for N1–N5 pickup)
+- **Implementation-readiness report:** [`_bmad-output/planning-artifacts/implementation-readiness-report-2026-04-29.md`](_bmad-output/planning-artifacts/implementation-readiness-report-2026-04-29.md) (6-step BMAD `check-implementation-readiness` audit + 3-action fix-pass log)
+- **Open-work bundle:** [`_bmad-output/planning-artifacts/open-work/`](_bmad-output/planning-artifacts/open-work/) (designer brief, card-sort plan, customer-dev interview plan, reduced-motion audit checklist, telemetry ownership matrix)
+- **Visual mockups:** [`_bmad-output/`](_bmad-output/) — `typeface-comparison.html`, `visual-foundation.html`, `design-directions.html` (locked aesthetic reference)
+- **Session handoff:** [`HANDOFF.md`](HANDOFF.md) (next-session bootstrap)
+- **ADRs (promoted):** [`docs/decisions/`](docs/decisions/)
 - **Compliance docs:** [`docs/compliance/`](docs/compliance/)
 - **Runbooks:** [`docs/runbook/`](docs/runbook/)
 
@@ -144,9 +151,10 @@ AI Secretary is a Meeting Intelligence & Decision Platform. It captures meetings
 
 ## When working on this codebase
 
-1. **Read [`docs/architecture.md`](docs/architecture.md) before any non-trivial change.**
+1. **Read [`docs/architecture.md`](docs/architecture.md) AND [`_bmad-output/planning-artifacts/arch-addendums.md`](_bmad-output/planning-artifacts/arch-addendums.md) before any non-trivial change.** Both are the architecture contract.
 2. **Run `pnpm typecheck && pnpm lint` before committing.**
-3. **For deviations from architecture:** create an ADR at `docs/decisions/000N-<short-name>.md` first, then make the change.
+3. **For deviations from architecture:** create an ADR at `docs/decisions/000N-<short-name>.md` first, then make the change. ADRs 0002–0006 already PROPOSED in `arch-addendums.md`; promote to `docs/decisions/` after first implementation validates each pattern.
 4. **For new audit actions:** add to the union type in `apps/api/src/lib/audit-types.ts`.
 5. **For new migrations:** include the corresponding RLS policy update in the same migration when the table is tenant-scoped.
-6. **For new provider integrations:** they go in `packages/{llm-gateway,transcription,storage}` — never in `apps/`.
+6. **For new provider integrations:** they go in `packages/{llm-gateway,transcription,storage,notifications,crm,consent}` — never in `apps/`. The `packages/notifications` package owns push (Expo) + email (Postmark/SES/SMTP); do not introduce parallel email/push code paths.
+7. **Pre-implementation phase gate:** the `bmad:bmm:workflows:check-implementation-readiness` workflow has been run (2026-04-29) — see `implementation-readiness-report-2026-04-29.md`. If you re-open major planning surfaces (architecture, PRD, epics), re-run readiness before resuming implementation.
