@@ -4,12 +4,12 @@ status: 'complete'
 completedAt: '2026-04-29'
 lastStep: 8
 inputDocuments:
-  - /Users/anthony/ai-secretary/docs/input-spec.md
+  - docs/input-spec.md
 workflowType: 'architecture'
 project_name: 'AI Secretary System'
 user_name: 'Anthony'
 date: '2026-04-29'
-phaseScope: 'Phase 1 MVP'
+mvpScope: 'MVP'
 deploymentTarget: 'SaaS-first (private-cloud / on-prem deferred)'
 ---
 
@@ -17,10 +17,10 @@ deploymentTarget: 'SaaS-first (private-cloud / on-prem deferred)'
 
 _This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
 
-## Workflow inputs
+## Workflow Inputs
 
-- **Input spec:** [`docs/input-spec.md`](./input-spec.md) — user-supplied developer documentation, treated as the de-facto Phase 1 product brief
-- **Formal PRD:** none yet (gap acknowledged — see "Open question" in step-01 report)
+- **Input spec:** [`docs/input-spec.md`](./input-spec.md) — user-supplied developer documentation, treated as the de-facto MVP product brief
+- **Formal PRD:** none yet (gap acknowledged)
 - **UX design:** none yet
 - **Research:** none yet
 - **Project context (`project-context.md`):** none yet
@@ -46,7 +46,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 - **Complexity level:** Enterprise
 - **Primary domain:** Full-stack platform (~70% backend / 30% frontend by surface area)
-- **Estimated architectural components:** 18–22
+- **Estimated architectural components:** ~27 (counting sub-adapters separately)
   - Identity/Auth, API gateway, Tenant/region context middleware
   - Ingestion service, Object storage abstraction
   - Transcription orchestrator, Whisper-API engine adapter, faster-whisper engine adapter
@@ -95,7 +95,7 @@ Full-stack platform: Node.js/TypeScript backend (Fastify) + React/Vite web + Rea
 
 ### Skeleton
 
-```
+```text
 ai-secretary/
 ├── apps/
 │   ├── web/               # React 19 + Vite + shadcn/ui + vite-plugin-pwa
@@ -135,10 +135,10 @@ ai-secretary/
 - **Package manager:** pnpm 9
 - **Runtime:** Node 22 LTS
 - **Frontend state:** React Query + Zustand (matches CyberPulse precedent)
-- **Frontend routing:** TanStack Router or React Router 7 (decided in Step 4)
+- **Frontend routing:** TanStack Router (locked below in Frontend Architecture)
 - **Config loading:** zod-validated env loaders in `packages/shared`
 
-### First implementation story
+### First Implementation Story
 
 Initialize the workspace skeleton with the directories above and base tooling installed at the workspace root. This story precedes any feature work.
 
@@ -146,8 +146,8 @@ Initialize the workspace skeleton with the directories above and base tooling in
 
 ### Decision Priority Analysis
 
-**Critical (block implementation):** D1 (tenant isolation), D2 (region routing), D5 (auth), D7 (API style), D8 (inter-service), D14 (security middleware)
-**Important (shape architecture):** D3 (vector store), D4 (cache), D6 (authz), D9-10 (frontend/mobile), D11 (observability), D12 (CI/CD), D13 (config), D15 (consent)
+**Critical (block implementation):** tenant isolation, region routing, auth, API style, inter-service communication, security middleware
+**Important (shape architecture):** vector store, cache, authorization, frontend/mobile choices, observability, CI/CD, config loading, consent
 **Deferred:** ReBAC, service mesh, active-active DB, SAML SSO
 
 ### Data Architecture
@@ -160,7 +160,7 @@ Initialize the workspace skeleton with the directories above and base tooling in
 | **Cache** | Redis per region (Railway add-on) | Rate-limit counters, session cache, presigned-URL cache, RAG query cache, bot session state |
 | **Migrations** | Drizzle Kit | Auto-run on deploy via service hook; checksum-tracked |
 | **Validation** | zod everywhere — request bodies, env config, module outputs, LLM responses | Single schema definition across boundaries |
-| **Embeddings model** | `text-embedding-3-small` via OpenAI ZDR (Day 1); abstraction permits Voyage / Cohere / local | Best price/perf; no-training contract via ZDR |
+| **Embedding model** | `text-embedding-3-small` via OpenAI ZDR (Day 1); abstraction permits Voyage / Cohere / local | Best price/perf; no-training contract via ZDR |
 
 **Schema invariants:** Every tenant-scoped table has `tenant_id UUID NOT NULL` with FK to `tenants` and an RLS policy enforcing `tenant_id = current_setting('app.current_tenant_id')::uuid`. Audit log table is append-only (no UPDATE/DELETE grants to app role).
 
@@ -184,7 +184,7 @@ Initialize the workspace skeleton with the directories above and base tooling in
 | Decision | Choice | Rationale |
 |---|---|---|
 | **API style** | REST + auto-generated OpenAPI (Fastify zod-to-openapi) | Stable HTTP surface for external integrations (Zoom/Teams/Nylas/CRM); TS client codegen via `openapi-typescript` |
-| **Versioning** | URL prefix `/api/v1/...` | Explicit, breaks isolated; Fastify route prefixes |
+| **Versioning** | URL prefix `/api/v1/...` | Explicit; breaking changes isolated; Fastify route prefixes |
 | **Error format** | RFC 7807 Problem Details JSON | Machine-readable, standard |
 | **Inter-service sync** | None — apps talk to DB directly. Avoids distributed-monolith pitfalls | Simpler ops, easier debugging |
 | **Async work** | pg-boss queues (Postgres-native) — one queue per stage: `transcribe`, `summarize`, `analyze`, `index`, `retention` | No separate broker to operate; transactional with the data |
@@ -308,7 +308,7 @@ These conventions exist to keep parallel AI-agent and human contributions cohere
 ### Structure Patterns
 
 **Inside `apps/api`:**
-```
+```text
 src/
 ├── routes/        # Fastify route plugins, one per resource
 ├── plugins/       # Cross-cutting Fastify plugins (tenant-context, audit-logger, ...)
@@ -320,7 +320,7 @@ src/
 ```
 
 **Inside a `packages/<name>`:**
-```
+```text
 src/
 ├── index.ts       # public exports only
 ├── types.ts       # public types
@@ -329,7 +329,7 @@ src/
 ```
 
 **Inside `apps/web`:**
-```
+```text
 src/
 ├── routes/        # TanStack Router file-based
 ├── components/
@@ -483,9 +483,9 @@ src/
 
 ## Project Structure & Boundaries
 
-### Complete project directory structure
+### Complete Project Directory Structure
 
-```
+```text
 ai-secretary/
 ├── README.md
 ├── CLAUDE.md                         # AI agent guidance for this codebase
@@ -687,7 +687,7 @@ ai-secretary/
 
 **Data flow (J1 happy path):**
 
-```
+```text
 mobile/web record stop
   → POST /api/v1/recordings/initiate-upload (returns presigned URL)
   → PUT to S3 (chunked, resumable)
@@ -742,7 +742,7 @@ mobile/web record stop
 | p95 transcription ≤ 6× RT | ✅ | Async pipeline; faster-whisper on GPU comfortably meets |
 | p95 summary ≤ 60s | ✅ | Independent worker, parallel with action-item extraction |
 | Search < 2s @ 100K corpus | ✅ | pgvector HNSW + FTS; verify with seeded data |
-| 99.5% availability | ✅ (deferred enhancement) | Within Railway SLA; multi-region failover deferred — see Gap A1 |
+| 99.5% availability | ⚠️ partial | Within Railway SLA; multi-region failover deferred — see Gap A1 |
 | 50 concurrent jobs | ✅ | pg-boss tuning + multiple worker replicas |
 | No-training constraint | ✅ | Gateway enforces; per-provider verified |
 | Encryption | ✅ | TLS 1.3 + S3 SSE-KMS at rest |
@@ -769,7 +769,7 @@ mobile/web record stop
 
 | ID | Gap | Resolution |
 |---|---|---|
-| **A1** | 99.5% availability with no auto-failover within region | Acceptable for MVP. Phase 2 enterprise concern. Documented as deferred. |
+| **A1** | 99.5% availability with no auto-failover within region | Acceptable for MVP. Deferred enterprise concern. Documented as deferred. |
 | **D1** | Diarization differs across engines | Post-transcription diarization stage in `packages/transcription`: when engine = whisper-api, run separate Pyannote pass. |
 | **C1** | CDN / static asset delivery | Cloudflare in front of Railway web service; cache static aggressively, never API. |
 | **N1** | Mobile push notifications | Expo Push Notifications service; reserve `notifications` table; defer implementation. |
@@ -886,6 +886,6 @@ pnpm add -D -w typescript @types/node tsx vitest @biomejs/biome
 
 **READY FOR IMPLEMENTATION ✅**
 
-**Next phase:** Begin implementation using the architectural decisions and patterns documented herein.
+**Next:** Begin implementation using the architectural decisions and patterns documented herein.
 
 **Document maintenance:** Update this architecture (or add ADRs to `docs/decisions/`) when major technical decisions are made during implementation.
