@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+.vitest-cache/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE
+.vscode/
+!.vscode/settings.json.example
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend caches
+.next/
+.turbo/
+.vite/
+
+# Mobile (Expo)
+.expo/
+.expo-shared/
+ios/
+android/
+
+# Docker
+.docker/
+
+# Temp
+tmp/
+*.tmp

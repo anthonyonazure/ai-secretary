@@ -1,0 +1,2 @@
+# Drizzle Kit will write generated SQL migrations here.
+# Run `pnpm --filter @ai-secretary/db db:generate` after editing schemas.
