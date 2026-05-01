@@ -14,7 +14,10 @@
       "**/coverage",
       "**/.expo",
       "packages/db/migrations/**",
-      "packages/db/rls/**"
+      "packages/db/rls/**",
+      "**/routeTree.gen.ts",
+      "e2e/test-results/**",
+      "e2e/playwright-report/**"
     ]
   },
   "formatter": {

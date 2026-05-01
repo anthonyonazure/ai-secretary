@@ -1,0 +1,30 @@
+{
+  "shadow": {
+    "sm": {
+      "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      "type": "shadow"
+    },
+    "md": {
+      "value": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
+      "type": "shadow"
+    },
+    "lg": {
+      "value": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
+      "type": "shadow"
+    }
+  },
+  "z": {
+    "base": { "value": "0", "type": "number" },
+    "elevated": { "value": "10", "type": "number" },
+    "sticky": { "value": "20", "type": "number" },
+    "overlay": { "value": "30", "type": "number" },
+    "modal": { "value": "40", "type": "number" },
+    "popover": { "value": "50", "type": "number" },
+    "toast": { "value": "60", "type": "number" },
+    "recording-status": {
+      "value": "70",
+      "type": "number",
+      "comment": "RecordingStatusPill must always sit above all other surfaces."
+    }
+  }
+}

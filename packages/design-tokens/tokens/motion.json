@@ -1,0 +1,24 @@
+{
+  "motion": {
+    "fast": { "value": "120ms", "type": "duration" },
+    "base": { "value": "200ms", "type": "duration" },
+    "slow": { "value": "320ms", "type": "duration" }
+  },
+  "easing": {
+    "default": {
+      "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "type": "cubicBezier",
+      "comment": "Standard ease-in-out for most transitions."
+    },
+    "gentle": {
+      "value": "cubic-bezier(0.25, 0.1, 0.25, 1)",
+      "type": "cubicBezier",
+      "comment": "Softer curve for vestibular-sensitive users (motion.gentle mode)."
+    },
+    "reduced": {
+      "value": "linear",
+      "type": "cubicBezier",
+      "comment": "Used in motion.reduced mode where any motion remains."
+    }
+  }
+}

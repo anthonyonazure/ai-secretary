@@ -1,0 +1,21 @@
+{
+  "_mode": {
+    "axis": "density",
+    "name": "accessible",
+    "selector": ".density-accessible",
+    "comment": "AAA touch-target compliance — 44px min per WCAG 2.5.5."
+  },
+  "space": {
+    "1": { "value": "6px", "type": "dimension" },
+    "2": { "value": "10px", "type": "dimension" },
+    "3": { "value": "14px", "type": "dimension" },
+    "4": { "value": "20px", "type": "dimension" },
+    "5": { "value": "28px", "type": "dimension" },
+    "6": { "value": "40px", "type": "dimension" }
+  },
+  "touch-target-min": { "value": "44px", "type": "dimension" },
+  "text": {
+    "base": { "value": "17px", "type": "dimension" },
+    "sm": { "value": "15px", "type": "dimension" }
+  }
+}

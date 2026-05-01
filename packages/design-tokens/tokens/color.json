@@ -1,0 +1,60 @@
+{
+  "color": {
+    "bg": {
+      "value": "#ffffff",
+      "type": "color",
+      "comment": "Default page background — light theme baseline."
+    },
+    "fg": {
+      "value": "#0a0a0a",
+      "type": "color",
+      "comment": "Default body text — light theme baseline."
+    },
+    "fg-muted": {
+      "value": "#525252",
+      "type": "color",
+      "comment": "Secondary/supporting text."
+    },
+    "border": {
+      "value": "#e5e5e5",
+      "type": "color",
+      "comment": "Decorative hairline divider — exempt from WCAG 1.4.11 (decorative). Interactive component boundaries land as `border-strong` in Phase 1."
+    },
+    "surface": {
+      "value": "#fafafa",
+      "type": "color",
+      "comment": "Elevated surface (cards, popovers) — light theme."
+    },
+    "accent": {
+      "value": "#4f46e5",
+      "type": "color",
+      "comment": "Primary accent (indigo-600) — light theme. Locked palette."
+    },
+    "accent-fg": {
+      "value": "#ffffff",
+      "type": "color",
+      "comment": "Foreground used on accent backgrounds (buttons, badges)."
+    },
+    "accent-soft": {
+      "value": "color-mix(in oklch, {color.accent.value} 25%, transparent)",
+      "fallback": "#4f46e540",
+      "type": "color",
+      "comment": "Translucent accent tint for hover/focus surfaces. Pre-computed fallback emitted alongside live color-mix()."
+    },
+    "success": {
+      "value": "#15803d",
+      "type": "color",
+      "comment": "Confirmation / completed state."
+    },
+    "warning": {
+      "value": "#a16207",
+      "type": "color",
+      "comment": "At-risk / non-blocking warning."
+    },
+    "danger": {
+      "value": "#b91c1c",
+      "type": "color",
+      "comment": "Destructive action / failure."
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, pgEnum, jsonb, integer, index } from 'drizzle-orm/pg-core';
+import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants.js';
 import { users } from './users.js';
 
@@ -49,8 +49,14 @@ export const meetings = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    idxMeetingsTenantCreated: index('idx_meetings_tenant_id_created_at').on(t.tenantId, t.createdAt),
-    idxMeetingsOwnerCreated: index('idx_meetings_owner_user_id_created_at').on(t.ownerUserId, t.createdAt),
+    idxMeetingsTenantCreated: index('idx_meetings_tenant_id_created_at').on(
+      t.tenantId,
+      t.createdAt,
+    ),
+    idxMeetingsOwnerCreated: index('idx_meetings_owner_user_id_created_at').on(
+      t.ownerUserId,
+      t.createdAt,
+    ),
   }),
 );
 

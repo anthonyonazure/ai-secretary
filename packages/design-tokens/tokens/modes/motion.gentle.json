@@ -1,0 +1,15 @@
+{
+  "_mode": {
+    "axis": "motion",
+    "name": "gentle",
+    "selector": ".motion-gentle"
+  },
+  "motion": {
+    "fast": { "value": "180ms", "type": "duration" },
+    "base": { "value": "300ms", "type": "duration" },
+    "slow": { "value": "480ms", "type": "duration" }
+  },
+  "easing": {
+    "default": { "value": "cubic-bezier(0.25, 0.1, 0.25, 1)", "type": "cubicBezier" }
+  }
+}

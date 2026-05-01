@@ -1,0 +1,91 @@
+/*
+ * RecordingStatusPill V2 — inline waveform keyframes.
+ *
+ * Five bars, 1s cycle, staggered phases so the waveform reads as continuous
+ * motion. Duration references the global motion token via the
+ * `--motion-base` custom property emitted by `@aisecretary/design-tokens`,
+ * so reduced-motion mode (which sets `--motion-base: 0ms`) freezes bars
+ * automatically — no separate `@media (prefers-reduced-motion)` rule
+ * required here. Static fallback height is set on the element itself.
+ */
+
+@keyframes rsp-waveform-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+[data-rsp-bar] {
+  transform-origin: center;
+  animation: rsp-waveform-bar 1000ms ease-in-out infinite;
+}
+
+[data-rsp-bar="1"] {
+  animation-delay: 0ms;
+}
+[data-rsp-bar="2"] {
+  animation-delay: 100ms;
+}
+[data-rsp-bar="3"] {
+  animation-delay: 200ms;
+}
+[data-rsp-bar="4"] {
+  animation-delay: 300ms;
+}
+[data-rsp-bar="5"] {
+  animation-delay: 400ms;
+}
+
+/*
+ * Reduced-motion fallback per UX spec § "RecordingStatusPill V2":
+ * "bars frozen at varied heights, no animation". Heights mimic the
+ * mid-cycle silhouette so the pill still reads as a waveform shape.
+ */
+@media (prefers-reduced-motion: reduce) {
+  [data-rsp-bar] {
+    animation: none;
+  }
+  [data-rsp-bar="1"] {
+    transform: scaleY(0.55);
+  }
+  [data-rsp-bar="2"] {
+    transform: scaleY(0.85);
+  }
+  [data-rsp-bar="3"] {
+    transform: scaleY(0.7);
+  }
+  [data-rsp-bar="4"] {
+    transform: scaleY(0.95);
+  }
+  [data-rsp-bar="5"] {
+    transform: scaleY(0.6);
+  }
+}
+
+/*
+ * `.motion-reduced` host-class fallback (used when the runtime mode is
+ * forced via the design-tokens density/motion class composition rather
+ * than the OS preference).
+ */
+.motion-reduced [data-rsp-bar] {
+  animation: none;
+}
+.motion-reduced [data-rsp-bar="1"] {
+  transform: scaleY(0.55);
+}
+.motion-reduced [data-rsp-bar="2"] {
+  transform: scaleY(0.85);
+}
+.motion-reduced [data-rsp-bar="3"] {
+  transform: scaleY(0.7);
+}
+.motion-reduced [data-rsp-bar="4"] {
+  transform: scaleY(0.95);
+}
+.motion-reduced [data-rsp-bar="5"] {
+  transform: scaleY(0.6);
+}

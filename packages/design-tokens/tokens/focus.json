@@ -1,0 +1,14 @@
+{
+  "focus-ring": {
+    "color": {
+      "value": "{color.accent.value}",
+      "type": "color",
+      "comment": "Focus ring tracks the accent color so it inverts cleanly per theme."
+    },
+    "width": { "value": "2px", "type": "dimension" },
+    "offset": { "value": "2px", "type": "dimension" }
+  },
+  "opacity": {
+    "disabled": { "value": "0.5", "type": "number" }
+  }
+}

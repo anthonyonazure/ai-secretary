@@ -1,0 +1,33 @@
+{
+  "name": "@aisecretary/design-tokens",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Design tokens — Style Dictionary build pipeline (ADR-0002).",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./build/tokens.css": "./build/tokens.css",
+    "./build/tokens.tailwind.js": "./build/tokens.tailwind.js",
+    "./build/tokens.native": "./build/tokens.native.ts"
+  },
+  "files": ["src", "tokens", "build", "style-dictionary.config.js", "README.md"],
+  "scripts": {
+    "prebuild": "tsc -p tsconfig.transforms.json",
+    "build": "node style-dictionary.config.js",
+    "contrast-check": "tsx src/checks/contrast.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src tokens",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf build dist"
+  },
+  "dependencies": {
+    "style-dictionary": "^4.3.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

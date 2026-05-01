@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0b0c" />
+    <title>AI Secretary</title>
+    <!--
+      Geist + Geist Mono webfonts. Locked typeface per UX spec
+      (`packages/design-tokens/tokens/typography.json`). The token CSS
+      already lists `Geist` first in the `--font-sans` stack with system
+      fallbacks; loading the webfont here means the rendered typeface
+      matches the locked visual foundation instead of falling through to
+      `ui-sans-serif`.
+
+      `display=swap` keeps text visible during the swap window — paint
+      with a fallback first, swap to Geist when ready. No layout shift
+      because the fallback metrics are close enough.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

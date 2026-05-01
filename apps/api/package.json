@@ -1,0 +1,62 @@
+{
+  "name": "@aisecretary/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./plugins/audit-logger": "./src/plugins/audit-logger.ts",
+    "./plugins/consent-check": "./src/plugins/consent-check.ts",
+    "./plugins/db": "./src/plugins/db.ts",
+    "./plugins/jwt": "./src/plugins/jwt.ts",
+    "./plugins/tenant-context": "./src/plugins/tenant-context.ts",
+    "./routes/auth": "./src/routes/auth.ts",
+    "./routes/auth-repository": "./src/routes/auth-repository.ts",
+    "./routes/meetings-repository": "./src/routes/meetings-repository.ts",
+    "./routes/action-items-repository": "./src/routes/action-items-repository.ts",
+    "./lib/audit-sink-postgres": "./src/lib/audit-sink-postgres.ts",
+    "./lib/audit-types": "./src/lib/audit-types.ts",
+    "./lib/consent-checker-db": "./src/lib/consent-checker-db.ts",
+    "./lib/db": "./src/lib/db.ts",
+    "./lib/erasure-cascade": "./src/lib/erasure-cascade.ts",
+    "./lib/http-error": "./src/lib/http-error.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src scripts",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc",
+    "clean": "rm -rf dist .turbo .tsbuildinfo",
+    "check:audit-coverage": "tsx scripts/check-audit-coverage.ts"
+  },
+  "dependencies": {
+    "@aisecretary/auth": "workspace:*",
+    "@aisecretary/consent": "workspace:*",
+    "@aisecretary/db": "workspace:*",
+    "@aisecretary/notifications": "workspace:*",
+    "@aisecretary/shared": "workspace:*",
+    "@aisecretary/storage": "workspace:*",
+    "@fastify/cookie": "^11.0.0",
+    "@fastify/cors": "^10.0.0",
+    "@fastify/helmet": "^12.0.0",
+    "@fastify/jwt": "^9.0.0",
+    "drizzle-orm": "^0.36.0",
+    "fastify": "^5.0.0",
+    "fastify-plugin": "^5.0.0",
+    "ioredis": "^5.4.0",
+    "pino": "^9.0.0",
+    "postgres": "^3.4.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "otplib": "^12.0.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

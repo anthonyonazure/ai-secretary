@@ -1,0 +1,17 @@
+{
+  "_mode": {
+    "axis": "motion",
+    "name": "reduced",
+    "selector": ".motion-reduced",
+    "comment": "Also auto-applied via @media (prefers-reduced-motion: reduce) — see tokens.css emit logic."
+  },
+  "motion": {
+    "fast": { "value": "0ms", "type": "duration" },
+    "base": { "value": "0ms", "type": "duration" },
+    "slow": { "value": "0ms", "type": "duration" }
+  },
+  "easing": {
+    "default": { "value": "linear", "type": "cubicBezier" },
+    "gentle": { "value": "linear", "type": "cubicBezier" }
+  }
+}

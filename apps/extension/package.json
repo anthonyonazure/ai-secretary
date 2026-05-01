@@ -1,0 +1,26 @@
+{
+  "name": "@aisecretary/extension",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc",
+    "clean": "rm -rf dist .turbo .tsbuildinfo"
+  },
+  "dependencies": {
+    "@aisecretary/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.270",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

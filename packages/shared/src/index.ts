@@ -1,0 +1,36 @@
+export const PACKAGE_NAME = '@aisecretary/shared';
+
+export type DensityMode = 'dense' | 'relaxed' | 'accessible';
+
+export * from './schemas/action-items.js';
+export * from './schemas/audit-export.js';
+export * from './schemas/auth.js';
+export * from './schemas/billing.js';
+export * from './schemas/chat.js';
+export * from './schemas/cross-org-policy.js';
+export * from './schemas/dsar.js';
+export * from './schemas/dsar-portal.js';
+export * from './schemas/erasure-preview.js';
+export * from './schemas/feedback.js';
+export * from './schemas/invites.js';
+export * from './schemas/meetings.js';
+export * from './schemas/module-output.js';
+export * from './schemas/recordings.js';
+export * from './schemas/search.js';
+export * from './schemas/shares.js';
+export * from './schemas/tenant-admin.js';
+export * from './schemas/oauth.js';
+export * from './schemas/upload-escalation.js';
+export * from './schemas/bot-sessions.js';
+export * from './billing/tiers.js';
+export * from './billing/usage.js';
+export * from './clip-bounds.js';
+export * from './format.js';
+export * from './citation-deeplink.js';
+export * from './audit-grouping.js';
+export * from './module-output-helpers.js';
+export * from './cron-validator.js';
+export * from './hooks/use-recording-timer.js';
+export * from './i18n/anchor-word.js';
+export * from './telemetry/registry.js';
+export * from './telemetry/track.js';

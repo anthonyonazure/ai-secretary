@@ -1,0 +1,28 @@
+{
+  "_mode": {
+    "axis": "theme",
+    "name": "dark",
+    "selector": ".theme-dark"
+  },
+  "color": {
+    "bg": { "value": "#0a0a0a", "type": "color" },
+    "fg": { "value": "#fafafa", "type": "color" },
+    "fg-muted": { "value": "#a3a3a3", "type": "color" },
+    "border": { "value": "#262626", "type": "color" },
+    "surface": { "value": "#171717", "type": "color" },
+    "accent": {
+      "value": "#818cf8",
+      "type": "color",
+      "comment": "Indigo-400 softened for dark theme. Locked palette."
+    },
+    "accent-fg": { "value": "#0a0a0a", "type": "color" },
+    "accent-soft": {
+      "value": "color-mix(in oklch, {color.accent.value} 25%, transparent)",
+      "fallback": "#818cf840",
+      "type": "color"
+    },
+    "success": { "value": "#4ade80", "type": "color" },
+    "warning": { "value": "#fbbf24", "type": "color" },
+    "danger": { "value": "#f87171", "type": "color" }
+  }
+}

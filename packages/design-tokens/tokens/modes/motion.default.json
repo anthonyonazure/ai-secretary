@@ -1,0 +1,8 @@
+{
+  "_mode": {
+    "axis": "motion",
+    "name": "default",
+    "selector": ":root",
+    "comment": "Default motion is the baseline scope; emitted at :root."
+  }
+}

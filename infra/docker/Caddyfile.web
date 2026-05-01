@@ -1,0 +1,19 @@
+# Caddy serves the SPA — single fallback to index.html for client-side
+# routing (TanStack Router). No special headers needed beyond the basics
+# Railway already injects.
+
+:8080 {
+	root * /usr/share/caddy
+	encode gzip zstd
+	try_files {path} /index.html
+	file_server
+	header {
+		# SPA hardening — same as Vite's default but more explicit.
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Cache the immutable hashed assets aggressively; index.html stays fresh.
+		Cache-Control "no-cache, no-store, must-revalidate" /index.html
+		Cache-Control "public, max-age=31536000, immutable" /assets/*
+	}
+}

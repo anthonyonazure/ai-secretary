@@ -1,0 +1,39 @@
+{
+  "name": "@aisecretary/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./password": "./src/password.ts",
+    "./jwt": "./src/jwt.ts",
+    "./refresh-token": "./src/refresh-token.ts",
+    "./refresh-token-redis": "./src/refresh-token-redis.ts",
+    "./refresh-token-memory": "./src/refresh-token-memory.ts",
+    "./mfa": "./src/mfa.ts",
+    "./mfa-challenge": "./src/mfa-challenge.ts",
+    "./encryption": "./src/encryption.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc",
+    "clean": "rm -rf dist .turbo .tsbuildinfo"
+  },
+  "dependencies": {
+    "@aisecretary/shared": "workspace:*",
+    "@node-rs/argon2": "^2.0.0",
+    "ioredis": "^5.4.0",
+    "jose": "^5.9.0",
+    "otplib": "^12.0.1",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

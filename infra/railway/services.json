@@ -1,0 +1,97 @@
+{
+  "$schema": "https://railway.com/spec/services.schema.json",
+  "_comment": "Railway service definitions. This file is informational — Railway's own dashboard is the source of truth for live deploys. Use it as a deploy plan + onboarding doc.",
+  "services": [
+    {
+      "name": "api",
+      "type": "http",
+      "build": {
+        "type": "dockerfile",
+        "dockerfilePath": "infra/docker/api.Dockerfile"
+      },
+      "deploy": {
+        "startCommand": "pnpm --filter @aisecretary/api exec tsx src/index.ts",
+        "healthcheckPath": "/healthz",
+        "healthcheckTimeout": 30
+      },
+      "envFromExample": [
+        "NODE_ENV",
+        "REGION",
+        "DATABASE_URL",
+        "REDIS_URL",
+        "JWT_SECRET",
+        "JWT_MFA_CHALLENGE_SECRET",
+        "MFA_SECRET_ENCRYPTION_KEY",
+        "S3_BUCKET",
+        "S3_REGION",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "ANTHROPIC_API_KEY",
+        "OPENAI_API_KEY",
+        "AZURE_OPENAI_API_KEY",
+        "AZURE_OPENAI_ENDPOINT",
+        "BEDROCK_REGION",
+        "BEDROCK_MODEL_ID",
+        "FASTER_WHISPER_URL",
+        "POSTMARK_API_KEY",
+        "SES_REGION",
+        "EXPO_ACCESS_TOKEN",
+        "SHARE_APP_BASE_URL",
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET",
+        "MICROSOFT_OAUTH_CLIENT_ID",
+        "MICROSOFT_OAUTH_CLIENT_SECRET",
+        "OAUTH_REDIRECT_BASE_URL"
+      ]
+    },
+    {
+      "name": "workers",
+      "type": "worker",
+      "build": {
+        "type": "dockerfile",
+        "dockerfilePath": "infra/docker/workers.Dockerfile"
+      },
+      "deploy": {
+        "startCommand": "pnpm --filter @aisecretary/workers exec tsx src/index.ts"
+      },
+      "envFromExample": [
+        "NODE_ENV",
+        "REGION",
+        "DATABASE_URL",
+        "REDIS_URL",
+        "S3_BUCKET",
+        "S3_REGION",
+        "S3_ENDPOINT",
+        "S3_FORCE_PATH_STYLE",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "ANTHROPIC_API_KEY",
+        "OPENAI_API_KEY",
+        "AZURE_OPENAI_API_KEY",
+        "AZURE_OPENAI_ENDPOINT",
+        "BEDROCK_REGION",
+        "BEDROCK_MODEL_ID",
+        "FASTER_WHISPER_URL",
+        "TRANSCRIBE_TIMEOUT_MS",
+        "TRANSCRIBE_CONCURRENCY",
+        "POSTMARK_API_KEY",
+        "SES_REGION",
+        "EXPO_ACCESS_TOKEN"
+      ]
+    },
+    {
+      "name": "web",
+      "type": "http",
+      "build": {
+        "type": "dockerfile",
+        "dockerfilePath": "infra/docker/web.Dockerfile"
+      },
+      "deploy": {
+        "startCommand": "caddy run --config /etc/caddy/Caddyfile --adapter caddyfile",
+        "healthcheckPath": "/",
+        "healthcheckTimeout": 10
+      },
+      "envFromExample": ["VITE_API_URL"]
+    }
+  ]
+}

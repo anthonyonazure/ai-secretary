@@ -1,5 +1,5 @@
 {
-  "name": "@ai-secretary/db",
+  "name": "@aisecretary/db",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -8,11 +8,12 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./lib/speaker-turn-id": "./src/lib/speaker-turn-id.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "build": "tsc",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts",

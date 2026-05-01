@@ -1,0 +1,12 @@
+{
+  "name": "AI Secretary",
+  "short_name": "AI Secretary",
+  "description": "Meeting Intelligence & Decision Platform",
+  "theme_color": "#0b0b0c",
+  "background_color": "#0b0b0c",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "scope": "/",
+  "icons": []
+}

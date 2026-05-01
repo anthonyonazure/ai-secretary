@@ -1,0 +1,28 @@
+{
+  "font": {
+    "sans": {
+      "value": "Geist, ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif",
+      "type": "fontFamily",
+      "comment": "Locked sans typeface per UX spec."
+    },
+    "mono": {
+      "value": "Geist Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+      "type": "fontFamily",
+      "comment": "Locked mono typeface for code, transcript timecodes, IDs."
+    }
+  },
+  "text": {
+    "xs": { "value": "12px", "type": "dimension" },
+    "sm": { "value": "14px", "type": "dimension" },
+    "base": { "value": "16px", "type": "dimension" },
+    "lg": { "value": "18px", "type": "dimension" },
+    "xl": { "value": "20px", "type": "dimension" },
+    "2xl": { "value": "24px", "type": "dimension" },
+    "3xl": { "value": "30px", "type": "dimension" }
+  },
+  "leading": {
+    "tight": { "value": "1.2", "type": "lineHeight" },
+    "normal": { "value": "1.5", "type": "lineHeight" },
+    "loose": { "value": "1.75", "type": "lineHeight" }
+  }
+}

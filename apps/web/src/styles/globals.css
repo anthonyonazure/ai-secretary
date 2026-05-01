@@ -1,0 +1,22 @@
+/*
+ * Globals stylesheet — Tailwind layers + design-token CSS variables.
+ *
+ * `tokens.css` is emitted by `packages/design-tokens` (Track 1) and
+ * provides :root, .theme-dark, .density-{dense,relaxed,accessible},
+ * .motion-{default,gentle,reduced}, and the .no-color-mix fallback
+ * scope. See arch-addendums § Token taxonomy.
+ */
+@import "@aisecretary/design-tokens/build/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Apply the locked Geist sans by default to all body text. The token
+   * stack already includes system fallbacks, so this is a no-op when
+   * the webfont fails to load. */
+  html {
+    font-family: var(--font-sans);
+  }
+}

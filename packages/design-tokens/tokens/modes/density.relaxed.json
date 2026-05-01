@@ -1,0 +1,16 @@
+{
+  "_mode": {
+    "axis": "density",
+    "name": "relaxed",
+    "selector": ".density-relaxed"
+  },
+  "space": {
+    "1": { "value": "4px", "type": "dimension" },
+    "2": { "value": "8px", "type": "dimension" },
+    "3": { "value": "12px", "type": "dimension" },
+    "4": { "value": "16px", "type": "dimension" },
+    "5": { "value": "24px", "type": "dimension" },
+    "6": { "value": "32px", "type": "dimension" }
+  },
+  "touch-target-min": { "value": "44px", "type": "dimension" }
+}

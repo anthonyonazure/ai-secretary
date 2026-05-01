@@ -1,0 +1,64 @@
+{
+  "_comments": {
+    "deepLinking": "Story 1.5d — `expo.scheme: aisecretary` registers `aisecretary:///accept-invite?token=…` for tenant-invite acceptance from emailed links. The same URL also serves the web flow at https://app.aisecretary.app/accept-invite?token=… (web is the default in dispatched emails). To enable iOS Universal Links / Android App Links so the email URL opens the app directly when installed, a follow-up infra story will add `expo.ios.associatedDomains: ['applinks:app.aisecretary.app']` and `expo.android.intentFilters` matching the same domain. The custom-scheme fallback works without any DNS / apple-app-site-association setup.",
+    "deepLinkRoutes": "Expo Router auto-routes `aisecretary:///accept-invite?token=X` to `app/accept-invite.tsx` (the file route for the path segment after the scheme). No additional `linking` config object is needed — Expo Router introspects the `app/` tree."
+  },
+  "expo": {
+    "name": "AI Secretary",
+    "slug": "ai-secretary",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "aisecretary",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b0b0c"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.aisecretary.mobile",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "AI Secretary records meetings only after explicit consent.",
+        "UIBackgroundModes": ["audio", "fetch", "processing"]
+      }
+    },
+    "android": {
+      "package": "app.aisecretary.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b0b0c"
+      },
+      "permissions": [
+        "RECORD_AUDIO",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MICROPHONE",
+        "POST_NOTIFICATIONS"
+      ],
+      "foregroundServiceTypes": ["microphone"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-task-manager",
+      "expo-audio",
+      "expo-background-fetch",
+      "expo-file-system",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 24
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

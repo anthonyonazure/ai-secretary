@@ -1,0 +1,16 @@
+{
+  "_mode": {
+    "axis": "density",
+    "name": "dense",
+    "selector": ".density-dense"
+  },
+  "space": {
+    "1": { "value": "2px", "type": "dimension" },
+    "2": { "value": "6px", "type": "dimension" },
+    "3": { "value": "10px", "type": "dimension" },
+    "4": { "value": "14px", "type": "dimension" },
+    "5": { "value": "20px", "type": "dimension" },
+    "6": { "value": "28px", "type": "dimension" }
+  },
+  "touch-target-min": { "value": "40px", "type": "dimension" }
+}

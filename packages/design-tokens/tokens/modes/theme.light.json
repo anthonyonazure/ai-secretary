@@ -1,0 +1,8 @@
+{
+  "_mode": {
+    "axis": "theme",
+    "name": "light",
+    "selector": ":root",
+    "comment": "Light theme is the default scope; emitted at :root."
+  }
+}

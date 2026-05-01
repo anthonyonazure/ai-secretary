@@ -1,0 +1,65 @@
+# Local-dev / on-prem stack. Brings up Postgres + Redis + MinIO so the
+# api + workers can run end-to-end without cloud accounts.
+#
+#   docker compose -f infra/docker/docker-compose.local.yml up
+#
+# After bringup:
+#   - Postgres on 5432 (user: aisecretary, pass: aisecretary, db: aisecretary)
+#   - Redis on 6379
+#   - MinIO on 9000 (API) / 9001 (console; user: aisecretary, pass: aisecretary)
+#
+# Run the api + workers from your shell against these:
+#   DATABASE_URL=postgres://aisecretary:aisecretary@localhost:5432/aisecretary \
+#   REDIS_URL=redis://localhost:6379 \
+#   S3_ENDPOINT=http://localhost:9000 S3_BUCKET=recordings S3_FORCE_PATH_STYLE=true \
+#   AWS_ACCESS_KEY_ID=aisecretary AWS_SECRET_ACCESS_KEY=aisecretary \
+#   pnpm --filter @aisecretary/api dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: aisecretary
+      POSTGRES_PASSWORD: aisecretary
+      POSTGRES_DB: aisecretary
+    ports: ["5432:5432"]
+    volumes:
+      - aisecretary-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aisecretary"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    volumes:
+      - aisecretary-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: aisecretary
+      MINIO_ROOT_PASSWORD: aisecretary
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - aisecretary-minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  aisecretary-postgres:
+  aisecretary-redis:
+  aisecretary-minio:

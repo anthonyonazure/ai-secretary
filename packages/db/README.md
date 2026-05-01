@@ -1,4 +1,4 @@
-# @ai-secretary/db
+# @aisecretary/db
 
 Drizzle ORM schema, migrations, and tenant-scoped row-level security for the AI Secretary platform.
 
@@ -13,13 +13,13 @@ Drizzle ORM schema, migrations, and tenant-scoped row-level security for the AI 
 
 ```bash
 # Generate migration from schema changes
-pnpm --filter @ai-secretary/db db:generate
+pnpm --filter @aisecretary/db db:generate
 
 # Apply migrations (uses DATABASE_URL)
-pnpm --filter @ai-secretary/db db:migrate
+pnpm --filter @aisecretary/db db:migrate
 
 # Drizzle Studio (visual DB browser)
-pnpm --filter @ai-secretary/db db:studio
+pnpm --filter @aisecretary/db db:studio
 ```
 
 ## Files
