@@ -163,6 +163,17 @@ class FakeStorageProvider implements StorageProvider {
   }): Promise<PresignedUrl> {
     return { url: 'https://signed/part', expiresAt: new Date(Date.now() + 60_000) };
   }
+  async uploadPart(input: {
+    key: string;
+    uploadId: string;
+    partNumber: number;
+    body: Uint8Array;
+  }): Promise<{ partNumber: number; etag: string }> {
+    return {
+      partNumber: input.partNumber,
+      etag: `etag-${input.partNumber}-${input.body.byteLength}`,
+    };
+  }
   async completeMultipartUpload(_input: {
     key: string;
     uploadId: string;

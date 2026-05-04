@@ -26,7 +26,29 @@ test.describe('inbox-to-action golden path', () => {
     await meetingLink.click();
 
     await expect(page).toHaveURL(new RegExp(`${webBaseUrl}/meetings/${meeting.id}$`));
-    await expect(page.getByText(meeting.id, { exact: true })).toBeVisible();
+    await expect(page.getByTestId('meeting-id-display')).toContainText(meeting.id);
+
+    // Transcript tab is revealed once turns load.
+    const transcriptTab = page.getByTestId('meeting-tab-transcript');
+    await expect(transcriptTab).toBeVisible();
+    await transcriptTab.click();
+
+    const transcriptList = page.getByTestId('meeting-transcript-list');
+    await expect(transcriptList).toBeVisible();
+    const firstTurn = meeting.speakerTurns[0];
+    if (!firstTurn) throw new Error('seed missing speaker turns');
+    await expect(transcriptList).toContainText(firstTurn.text);
+    await expect(page.getByTestId(`turn-${firstTurn.turnId}`)).toBeVisible();
+
+    // Actions tab is revealed because the seeded meeting has at least one action item.
+    const meetingActionItem = actionItems.find((a) => a.meetingId === meeting.id);
+    if (!meetingActionItem) throw new Error('seed missing action item bound to primary meeting');
+    const actionsTab = page.getByTestId('meeting-tab-actions');
+    await expect(actionsTab).toBeVisible();
+    await actionsTab.click();
+    const meetingActionsList = page.getByTestId('meeting-action-items-list');
+    await expect(meetingActionsList).toBeVisible();
+    await expect(meetingActionsList).toContainText(meetingActionItem.text);
 
     await page
       .getByRole('navigation', { name: /primary/i })

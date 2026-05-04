@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { WAV_STREAMING_SIZE_SENTINEL, wavHeader } from './wav-encoder.js';
 
+const ascii = (header: Uint8Array, offset: number, length: number): string =>
+  new TextDecoder('ascii').decode(header.subarray(offset, offset + length));
+
 describe('wavHeader', () => {
   it('emits a 44-byte canonical RIFF/WAVE/fmt/data header', () => {
     const header = wavHeader({
@@ -11,14 +14,10 @@ describe('wavHeader', () => {
       dataLength: 32_000,
     });
     expect(header.byteLength).toBe(44);
-    // RIFF
-    expect(String.fromCharCode(header[0]!, header[1]!, header[2]!, header[3]!)).toBe('RIFF');
-    // WAVE
-    expect(String.fromCharCode(header[8]!, header[9]!, header[10]!, header[11]!)).toBe('WAVE');
-    // fmt
-    expect(String.fromCharCode(header[12]!, header[13]!, header[14]!, header[15]!)).toBe('fmt ');
-    // data
-    expect(String.fromCharCode(header[36]!, header[37]!, header[38]!, header[39]!)).toBe('data');
+    expect(ascii(header, 0, 4)).toBe('RIFF');
+    expect(ascii(header, 8, 4)).toBe('WAVE');
+    expect(ascii(header, 12, 4)).toBe('fmt ');
+    expect(ascii(header, 36, 4)).toBe('data');
   });
 
   it('encodes sample rate / byte rate / channels little-endian', () => {

@@ -202,7 +202,7 @@ describe('RecordingsChunkUploadAudioSink', () => {
       const body = storage.parts[0]?.body;
       expect(body).toBeDefined();
       if (!body) throw new Error('unreachable');
-      expect(String.fromCharCode(body[0]!, body[1]!, body[2]!, body[3]!)).toBe('RIFF');
+      expect(new TextDecoder('ascii').decode(body.subarray(0, 4))).toBe('RIFF');
       // Total flushed = 44 (header) + 32 (frame) = 76 bytes.
       expect(body.byteLength).toBe(44 + 32);
     });
