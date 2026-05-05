@@ -28,6 +28,15 @@ test.describe('inbox-to-action golden path', () => {
     await expect(page).toHaveURL(new RegExp(`${webBaseUrl}/meetings/${meeting.id}$`));
     await expect(page.getByTestId('meeting-id-display')).toContainText(meeting.id);
 
+    // Bot controls are present on every meeting; with no active session,
+    // the invite-bot CTA renders. The badge slot stays empty until a
+    // bot.join job lands. We don't drive the full invite flow here
+    // (that needs the bot-join handler running), but we DO assert the
+    // CTA exists and is clickable so the surface stays wired.
+    const botControls = page.getByTestId('meeting-bot-controls');
+    await expect(botControls).toBeVisible();
+    await expect(botControls.getByTestId('invite-bot-cta')).toBeVisible();
+
     // Transcript tab is revealed once turns load.
     const transcriptTab = page.getByTestId('meeting-tab-transcript');
     await expect(transcriptTab).toBeVisible();

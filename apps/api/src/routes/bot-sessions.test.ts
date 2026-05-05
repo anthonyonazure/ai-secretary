@@ -206,3 +206,256 @@ describe('POST /api/v1/bot-sessions', () => {
     await app.close();
   });
 });
+
+describe('GET /api/v1/bot-sessions/:sessionId', () => {
+  it('returns the session for the owner', async () => {
+    const { app } = await buildApp();
+    const { accessToken } = await signupAndAuth(app);
+
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/v1/bot-sessions',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { source: 'zoom_bot', externalMeetingId: '111-222-333' },
+    });
+    const { sessionId } = create.json();
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/bot-sessions/${sessionId}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.sessionId).toBe(sessionId);
+    expect(body.status).toBe('provisioning');
+    expect(body.source).toBe('zoom_bot');
+    expect(body.externalMeetingId).toBe('111-222-333');
+    expect('externalMeetingPasscode' in body).toBe(false);
+    await app.close();
+  });
+
+  it('returns 404 for a session in a different tenant', async () => {
+    const { app, botSessionsRepo } = await buildApp();
+    // Seed a row for a different tenant directly.
+    botSessionsRepo.rows.push({
+      id: '00000000-0000-0000-0000-00000000aaaa',
+      tenantId: '00000000-0000-0000-0000-00000000bbbb',
+      meetingId: null,
+      ownerUserId: '00000000-0000-0000-0000-00000000cccc',
+      source: 'zoom_bot',
+      status: 'provisioning',
+      region: 'us',
+      externalMeetingId: 'cross-tenant',
+      joinedAt: null,
+      endedAt: null,
+      failureReason: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const { accessToken } = await signupAndAuth(app);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/bot-sessions/00000000-0000-0000-0000-00000000aaaa',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('returns 404 for an unknown session id', async () => {
+    const { app } = await buildApp();
+    const { accessToken } = await signupAndAuth(app);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/bot-sessions/00000000-0000-0000-0000-000000000000',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('returns 422 when sessionId is not a UUID', async () => {
+    const { app } = await buildApp();
+    const { accessToken } = await signupAndAuth(app);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/bot-sessions/not-a-uuid',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(422);
+    await app.close();
+  });
+
+  it('returns 401 without an Authorization header', async () => {
+    const { app } = await buildApp();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/bot-sessions/00000000-0000-0000-0000-000000000000',
+    });
+    expect([401, 403]).toContain(res.statusCode);
+    await app.close();
+  });
+});
+
+describe('GET /api/v1/bot-sessions', () => {
+  it('lists the caller’s own sessions by default and excludes other users', async () => {
+    const { app, botSessionsRepo } = await buildApp();
+    const { accessToken, tenantId, userId } = await signupAndAuth(app);
+
+    // Caller's session.
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/bot-sessions',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { source: 'zoom_bot', externalMeetingId: 'mine-1' },
+    });
+    // Another user's session in the same tenant.
+    botSessionsRepo.rows.push({
+      id: randomUUID(),
+      tenantId,
+      meetingId: null,
+      ownerUserId: randomUUID(),
+      source: 'teams_bot',
+      status: 'provisioning',
+      region: 'us',
+      externalMeetingId: 'someone-else',
+      joinedAt: null,
+      endedAt: null,
+      failureReason: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/bot-sessions',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.totalCount).toBe(1);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0].externalMeetingId).toBe('mine-1');
+    expect(body.nextCursor).toBeNull();
+    // Reference userId so the variable is consumed (lint).
+    expect(typeof userId).toBe('string');
+    await app.close();
+  });
+
+  it('filters by meetingId when provided', async () => {
+    const { app, botSessionsRepo } = await buildApp();
+    const { accessToken, tenantId, userId } = await signupAndAuth(app);
+    const meetingA = randomUUID();
+    const meetingB = randomUUID();
+    botSessionsRepo.rows.push(
+      {
+        id: randomUUID(),
+        tenantId,
+        meetingId: meetingA,
+        ownerUserId: userId,
+        source: 'zoom_bot',
+        status: 'joined',
+        region: 'us',
+        externalMeetingId: 'a',
+        joinedAt: new Date(),
+        endedAt: null,
+        failureReason: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        tenantId,
+        meetingId: meetingB,
+        ownerUserId: userId,
+        source: 'teams_bot',
+        status: 'joined',
+        region: 'us',
+        externalMeetingId: 'b',
+        joinedAt: new Date(),
+        endedAt: null,
+        failureReason: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    );
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/bot-sessions?meetingId=${meetingA}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.totalCount).toBe(1);
+    expect(body.items[0].meetingId).toBe(meetingA);
+    await app.close();
+  });
+
+  it('paginates via nextCursor when results exceed limit', async () => {
+    const { app, botSessionsRepo } = await buildApp();
+    const { accessToken, tenantId, userId } = await signupAndAuth(app);
+    // Seed 3 sessions for this user.
+    for (let i = 0; i < 3; i++) {
+      botSessionsRepo.rows.push({
+        id: randomUUID(),
+        tenantId,
+        meetingId: null,
+        ownerUserId: userId,
+        source: 'zoom_bot',
+        status: 'provisioning',
+        region: 'us',
+        externalMeetingId: `seq-${i}`,
+        joinedAt: null,
+        endedAt: null,
+        failureReason: null,
+        createdAt: new Date(Date.now() + i * 1000),
+        updatedAt: new Date(Date.now() + i * 1000),
+      });
+    }
+
+    const first = await app.inject({
+      method: 'GET',
+      url: '/api/v1/bot-sessions?limit=2',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(first.statusCode).toBe(200);
+    const firstBody = first.json();
+    expect(firstBody.items).toHaveLength(2);
+    expect(firstBody.nextCursor).not.toBeNull();
+    expect(firstBody.totalCount).toBe(3);
+
+    const second = await app.inject({
+      method: 'GET',
+      url: `/api/v1/bot-sessions?limit=2&cursor=${encodeURIComponent(firstBody.nextCursor)}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(second.statusCode).toBe(200);
+    const secondBody = second.json();
+    expect(secondBody.items).toHaveLength(1);
+    expect(secondBody.nextCursor).toBeNull();
+    await app.close();
+  });
+
+  it('rejects limit > 100 with 422', async () => {
+    const { app } = await buildApp();
+    const { accessToken } = await signupAndAuth(app);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/bot-sessions?limit=500',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.statusCode).toBe(422);
+    await app.close();
+  });
+
+  it('returns 401 without an Authorization header', async () => {
+    const { app } = await buildApp();
+    const res = await app.inject({ method: 'GET', url: '/api/v1/bot-sessions' });
+    expect([401, 403]).toContain(res.statusCode);
+    await app.close();
+  });
+});

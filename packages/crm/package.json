@@ -10,12 +10,15 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "biome check src",
+    "lint": "biome check src scripts",
     "test": "vitest run --passWithNoTests",
     "build": "tsc",
-    "clean": "rm -rf dist .turbo .tsbuildinfo"
+    "clean": "rm -rf dist .turbo .tsbuildinfo",
+    "check:isolation": "tsx scripts/check-isolation.ts"
   },
   "devDependencies": {
-    "typescript": "^5.6.0"
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }

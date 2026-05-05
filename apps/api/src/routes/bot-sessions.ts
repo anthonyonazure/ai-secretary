@@ -20,15 +20,23 @@
  */
 
 import {
+  type BotSessionListResponse,
   type BotSessionResponse,
   type CreateBotSessionRequest,
+  botSessionListResponseSchema,
   botSessionResponseSchema,
   createBotSessionRequestSchema,
 } from '@aisecretary/shared';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
+import { z } from 'zod';
 
 import type { BotJoinEnqueuer } from '../lib/bot-join-enqueue.js';
-import { ForbiddenError, UnauthorizedError, ValidationError } from '../lib/http-error.js';
+import {
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../lib/http-error.js';
 import type { BotSessionRow, BotSessionsRepository } from './bot-sessions-repository.js';
 
 export interface BotSessionsRoutesOptions {
@@ -57,6 +65,21 @@ const rowToResponse = (row: BotSessionRow): BotSessionResponse => ({
   endedAt: row.endedAt ? row.endedAt.toISOString() : null,
   failureReason: row.failureReason,
   createdAt: row.createdAt.toISOString(),
+});
+
+const sessionIdParamSchema = z.object({
+  sessionId: z.string().uuid(),
+});
+
+const DEFAULT_LIST_LIMIT = 20;
+const MAX_LIST_LIMIT = 100;
+
+const listQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(MAX_LIST_LIMIT).default(DEFAULT_LIST_LIMIT),
+  cursor: z.string().min(1).optional(),
+  meetingId: z.string().uuid().optional(),
+  /** Restrict to the caller's own sessions. Defaults to true when omitted. */
+  mineOnly: z.coerce.boolean().optional(),
 });
 
 export const botSessionsRoutes = (options: BotSessionsRoutesOptions): FastifyPluginAsync => {
@@ -107,6 +130,84 @@ export const botSessionsRoutes = (options: BotSessionsRoutesOptions): FastifyPlu
         });
 
         return reply.status(201).send(botSessionResponseSchema.parse(rowToResponse(row)));
+      },
+    );
+
+    /**
+     * GET /:sessionId — fetch a single bot session.
+     *
+     * Tenant-scoped: the repository's `findById` already filters by
+     * `tenantId`, so a cross-tenant probe yields 404 (not 403) — same
+     * convention the meetings route uses to avoid leaking existence.
+     *
+     * No `requireConsent` gate — the bot session row is metadata about
+     * the caller's own join attempt, not recorded content. Per-meeting
+     * playback / transcript routes carry their own consent checks.
+     */
+    fastify.get<{ Params: { sessionId: string } }>(
+      '/:sessionId',
+      {
+        config: { skipAudit: true },
+      },
+      async (request, reply) => {
+        const { tenantId } = requireUser(request);
+        const parsed = sessionIdParamSchema.safeParse(request.params);
+        if (!parsed.success) {
+          throw new ValidationError(
+            parsed.error.issues[0]?.message ?? 'sessionId must be a valid UUID',
+          );
+        }
+        const row = await options.repository.findById(parsed.data.sessionId, tenantId);
+        if (!row) {
+          throw new NotFoundError(`Bot session ${parsed.data.sessionId} not found.`);
+        }
+        return reply.status(200).send(botSessionResponseSchema.parse(rowToResponse(row)));
+      },
+    );
+
+    /**
+     * GET / — paginated list of bot sessions for the current tenant.
+     *
+     * Query params:
+     *   - `limit`     — page size (default 20, max 100)
+     *   - `cursor`    — base64 token from a previous `nextCursor`
+     *   - `meetingId` — restrict to a single meeting (drives the
+     *                    meeting-detail bot-status badge)
+     *   - `mineOnly`  — when true (default), restrict to the caller's
+     *                    own sessions; admins can pass `mineOnly=false`
+     *                    to see every session in the tenant.
+     */
+    fastify.get<{
+      Querystring: { limit?: string; cursor?: string; meetingId?: string; mineOnly?: string };
+    }>(
+      '/',
+      {
+        config: { skipAudit: true },
+      },
+      async (request, reply) => {
+        const { userId, tenantId } = requireUser(request);
+        const parsed = listQuerySchema.safeParse(request.query ?? {});
+        if (!parsed.success) {
+          throw new ValidationError(
+            parsed.error.issues[0]?.message ?? 'Invalid list-bot-sessions query.',
+          );
+        }
+        const { limit, cursor, meetingId, mineOnly } = parsed.data;
+        const restrictToCaller = mineOnly ?? true;
+        const result = await options.repository.list({
+          tenantId,
+          ...(restrictToCaller ? { ownerUserId: userId } : {}),
+          ...(meetingId ? { meetingId } : {}),
+          limit,
+          cursor: cursor ?? null,
+        });
+
+        const body: BotSessionListResponse = {
+          items: result.items.map((r) => rowToResponse(r)),
+          nextCursor: result.nextCursor,
+          totalCount: result.totalCount,
+        };
+        return reply.status(200).send(botSessionListResponseSchema.parse(body));
       },
     );
   };

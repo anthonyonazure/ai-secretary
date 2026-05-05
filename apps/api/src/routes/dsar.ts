@@ -72,6 +72,17 @@ export class InMemoryDsarExportEnqueuer implements DsarExportEnqueuer {
 }
 
 export const DSAR_EXPORT_QUEUE = 'dsar.export' as const;
+
+/** pg-boss-backed enqueuer — production wires this in `buildProductionServer()`. */
+export class PgBossDsarExportEnqueuer implements DsarExportEnqueuer {
+  // biome-ignore lint/suspicious/noExplicitAny: pg-boss is the only consumer of this seam in production.
+  constructor(private readonly boss: { send(name: string, data: unknown): Promise<any> }) {}
+
+  async enqueue(payload: DsarExportJobPayload): Promise<string | null> {
+    const id = await this.boss.send(DSAR_EXPORT_QUEUE, payload);
+    return id ?? null;
+  }
+}
 const REQUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const ESTIMATED_READY_MS = 24 * 60 * 60 * 1000;
 

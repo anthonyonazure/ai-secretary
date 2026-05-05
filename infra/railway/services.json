@@ -92,6 +92,40 @@
         "healthcheckTimeout": 10
       },
       "envFromExample": ["VITE_API_URL"]
+    },
+    {
+      "name": "bot",
+      "type": "worker",
+      "build": {
+        "type": "dockerfile",
+        "dockerfilePath": "infra/docker/bot.Dockerfile"
+      },
+      "deploy": {
+        "startCommand": "pnpm --filter @aisecretary/bot-service exec tsx src/index.ts"
+      },
+      "envFromExample": [
+        "NODE_ENV",
+        "REGION",
+        "MODE",
+        "DATABASE_URL",
+        "REDIS_URL",
+        "S3_BUCKET",
+        "S3_REGION",
+        "S3_ENDPOINT",
+        "S3_FORCE_PATH_STYLE",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "BOT_DISPLAY_NAME",
+        "BOT_DISCLOSURE_TEXT",
+        "BOT_SESSION_DURATION_MS",
+        "BOT_JOIN_CONCURRENCY",
+        "ZOOM_ACCOUNT_ID",
+        "ZOOM_CLIENT_ID",
+        "ZOOM_CLIENT_SECRET",
+        "TEAMS_TENANT_ID",
+        "TEAMS_CLIENT_ID",
+        "TEAMS_CLIENT_SECRET"
+      ]
     }
   ]
 }

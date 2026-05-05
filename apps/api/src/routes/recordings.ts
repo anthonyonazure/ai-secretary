@@ -97,6 +97,19 @@ export class InMemoryNotificationEnqueuer implements NotificationEnqueuer {
   }
 }
 
+export const NOTIFICATION_SEND_QUEUE = 'notification.send' as const;
+
+/** pg-boss-backed enqueuer — production wires this in `buildProductionServer()`. */
+export class PgBossNotificationEnqueuer implements NotificationEnqueuer {
+  // biome-ignore lint/suspicious/noExplicitAny: pg-boss is the only consumer of this seam in production.
+  constructor(private readonly boss: { send(name: string, data: unknown): Promise<any> }) {}
+
+  async enqueue(payload: NotificationJobPayload): Promise<string | null> {
+    const id = await this.boss.send(NOTIFICATION_SEND_QUEUE, payload);
+    return id ?? null;
+  }
+}
+
 export interface RecordingsRoutesOptions {
   repository: RecordingsRepository;
   storage: StorageProvider;

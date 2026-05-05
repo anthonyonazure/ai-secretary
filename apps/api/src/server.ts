@@ -4,19 +4,36 @@ import {
   type RefreshTokenStore,
   assertMfaEncryptionKey,
 } from '@aisecretary/auth';
-import type { StorageProvider } from '@aisecretary/storage';
+import { StaticKekKeyring } from '@aisecretary/db';
+import { type StorageProvider, createStorageProvider } from '@aisecretary/storage';
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import Redis from 'ioredis';
+import type PgBoss from 'pg-boss';
 import { type Env, loadEnv } from './env.js';
 import { PostgresAuditSink } from './lib/audit-sink-postgres.js';
-import { type BotJoinEnqueuer, InMemoryBotJoinEnqueuer } from './lib/bot-join-enqueue.js';
+import {
+  type BotJoinEnqueuer,
+  InMemoryBotJoinEnqueuer,
+  PgBossBotJoinEnqueuer,
+} from './lib/bot-join-enqueue.js';
 import { createDbConsentChecker } from './lib/consent-checker-db.js';
+import {
+  type CrmPushEnqueuer,
+  InMemoryCrmPushEnqueuer,
+  PgBossCrmPushEnqueuer,
+} from './lib/crm-push-enqueue.js';
 import { type DbHandle, createDbHandle } from './lib/db.js';
 import { createLogger } from './lib/logger.js';
-import { InMemoryTranscribeEnqueuer, type TranscribeEnqueuer } from './lib/transcribe-enqueue.js';
+import { buildHttpOauthExchange } from './lib/oauth-exchange.js';
+import { createBoss, gracefulStopBoss } from './lib/pgboss.js';
+import {
+  InMemoryTranscribeEnqueuer,
+  PgBossTranscribeEnqueuer,
+  type TranscribeEnqueuer,
+} from './lib/transcribe-enqueue.js';
 import { type AuditSink, auditLoggerPlugin } from './plugins/audit-logger.js';
 import {
   type ConsentCheckerFn,
@@ -35,6 +52,11 @@ import { type HeartbeatStore, redisPlugin } from './plugins/redis.js';
 import { requestIdPlugin } from './plugins/request-id.js';
 import { storagePlugin } from './plugins/storage.js';
 import { tenantContextPlugin } from './plugins/tenant-context.js';
+import {
+  InMemoryTenantStateReader,
+  type TenantStateReader,
+  tenantStateCheckPlugin,
+} from './plugins/tenant-state-check.js';
 import { auditCoverageFixtureRoutes } from './routes/_audit-coverage-fixture.js';
 import {
   type ActionItemsRepository,
@@ -56,10 +78,17 @@ import { botSessionsRoutes } from './routes/bot-sessions.js';
 import {
   type ChatRetriever,
   type ChatStreamer,
+  buildLlmGatewayStreamer,
   buildMockStreamer,
   buildSearchBackedRetriever,
   chatRoutes,
 } from './routes/chat.js';
+import {
+  type CrmIntegrationsRepository,
+  DrizzleCrmIntegrationsRepository,
+  InMemoryCrmIntegrationsRepository,
+} from './routes/crm-repository.js';
+import { crmRoutes } from './routes/crm.js';
 import {
   type CrossOrgPolicyRepository,
   InMemoryCrossOrgPolicyRepository,
@@ -71,7 +100,7 @@ import {
 } from './routes/dsar-portal-repository.js';
 import { dsarPortalRoutes } from './routes/dsar-portal.js';
 import { DrizzleDsarRepository, type DsarRepository } from './routes/dsar-repository.js';
-import { type DsarExportEnqueuer, dsarRoutes } from './routes/dsar.js';
+import { type DsarExportEnqueuer, PgBossDsarExportEnqueuer, dsarRoutes } from './routes/dsar.js';
 import {
   DrizzleErasurePreviewRepository,
   type ErasurePreviewRepository,
@@ -89,7 +118,11 @@ import {
   type ReceivingTenantResolver,
 } from './routes/inbound-shares-repository.js';
 import { DrizzleInvitesRepository, type InvitesRepository } from './routes/invites-repository.js';
-import { type InviteNotificationEnqueuer, invitesRoutes } from './routes/invites.js';
+import {
+  type InviteNotificationEnqueuer,
+  PgBossInviteNotificationEnqueuer,
+  invitesRoutes,
+} from './routes/invites.js';
 import {
   DrizzleMeetingsRepository,
   type MeetingsRepository,
@@ -107,6 +140,7 @@ import {
 } from './routes/recordings-repository.js';
 import {
   type NotificationEnqueuer,
+  PgBossNotificationEnqueuer,
   RECORDING_MEETING_ID_RESOLVER,
   recordingsRoutes,
 } from './routes/recordings.js';
@@ -171,6 +205,18 @@ export interface BuildServerOptions {
   botSessionsRepository?: BotSessionsRepository;
   /** Override the bot-join enqueuer (tests). Defaults to in-memory. */
   botJoinEnqueuer?: BotJoinEnqueuer;
+  /** Override the CRM integrations repository (tests). Defaults to in-memory.
+   *  Production wires DrizzleCrmIntegrationsRepository when a dbHandle is
+   *  present AND `kekKeyring` is supplied. */
+  crmIntegrationsRepository?: CrmIntegrationsRepository;
+  /** Override the CRM push enqueuer (tests). Defaults to in-memory. */
+  crmPushEnqueuer?: CrmPushEnqueuer;
+  /**
+   * KEK keyring for envelope-encrypting CRM tokens. Required for the
+   * Drizzle-backed CRM repository. When unset (tests / dev), the
+   * in-memory repo is used.
+   */
+  kekKeyring?: import('@aisecretary/db').KekKeyring;
   /**
    * Override the notification enqueuer (Story 4.5). Tests inject an
    * in-memory capture; production wires a real PgBoss-backed
@@ -219,6 +265,8 @@ export interface BuildServerOptions {
   crossOrgPolicyRepository?: CrossOrgPolicyRepository;
   /** Override the entitlement repository (Story 13.2). */
   entitlementRepository?: EntitlementRepository;
+  /** Override the tenant-state reader (Story 12.1 / ADR-0004). */
+  tenantStateReader?: TenantStateReader;
   /**
    * Story 13.3 — seat-ceiling check called by the invite-create route.
    * Wires through to `InvitesRoutesOptions.seatCeilingCheck`.
@@ -407,6 +455,15 @@ export const buildServer = async (options: BuildServerOptions = {}): Promise<Fas
     options.entitlementRepository ?? new InMemoryEntitlementRepository();
   await fastify.register(entitlementCheckPlugin, { repository: entitlementRepository });
 
+  // Tenant-state-check (Story 12.1 / ADR-0004). Gates mutating
+  // recording-pipeline routes on the tenant lifecycle FSM. Routes opt
+  // in via `config.requireTenantState: true`. Without an injected
+  // reader, the in-memory variant is used (which returns null →
+  // routes that opt in get 403 in dev/test unless seeded).
+  const tenantStateReader: TenantStateReader =
+    options.tenantStateReader ?? new InMemoryTenantStateReader();
+  await fastify.register(tenantStateCheckPlugin, { reader: tenantStateReader });
+
   // Storage plugin (optional — tests that only exercise /auth omit it).
   if (options.storageProvider) {
     await fastify.register(storagePlugin, { provider: options.storageProvider });
@@ -553,6 +610,29 @@ export const buildServer = async (options: BuildServerOptions = {}): Promise<Fas
       { prefix: '/api/v1/bot-sessions' },
     );
   }
+
+  // CRM integrations routes (Story 15.x / ADR-0003). Mounts the
+  // connect / disconnect / list / push surface. The Drizzle-backed
+  // repository requires a KEK keyring; without one, fall through to
+  // the in-memory repo (dev/test/demo deploys without an HSM).
+  const crmIntegrationsRepository: CrmIntegrationsRepository =
+    options.crmIntegrationsRepository ??
+    (options.dbHandle && options.kekKeyring
+      ? new DrizzleCrmIntegrationsRepository(
+          options.dbHandle.db,
+          options.dbHandle.region,
+          options.kekKeyring,
+        )
+      : new InMemoryCrmIntegrationsRepository());
+  const crmPushEnqueuer: CrmPushEnqueuer = options.crmPushEnqueuer ?? new InMemoryCrmPushEnqueuer();
+  await fastify.register(
+    crmRoutes({
+      repository: crmIntegrationsRepository,
+      enqueuer: crmPushEnqueuer,
+      mode: env.NODE_ENV === 'production' ? 'production' : env.NODE_ENV === 'test' ? 'test' : 'dev',
+    }),
+    { prefix: '/api/v1/crm' },
+  );
 
   // Meetings routes (Story 2.1 follow-up) — speaker-turns + meeting-scoped
   // playback URL. Same gating as recordings: requires a storage provider
@@ -747,11 +827,53 @@ export const buildServer = async (options: BuildServerOptions = {}): Promise<Fas
   // still register but every request returns 503 — keeps the URL
   // contract stable so clients can detect "OAuth not yet configured"
   // cleanly.
+  // Real OAuth code-exchange — wired automatically when authRepository
+  // is available AND at least one provider has real client credentials.
+  // Tests can override via `options.oauthExchange`. Without creds, the
+  // routes return 503 (the default behavior preserved by passing
+  // `noopOauthExchange`).
+  const oauthProvidersConfig = oauthProvidersFromEnv(env);
+  const hasOauthCreds =
+    !!oauthProvidersConfig.google.clientId || !!oauthProvidersConfig.microsoft.clientId;
+  const productionExchange =
+    options.oauthExchange ??
+    (authRepository && hasOauthCreds
+      ? buildHttpOauthExchange({
+          authRepository,
+          authRoutesOptions: {
+            repository: authRepository,
+            refreshStore: refreshState.store,
+            jwtSecret: env.JWT_SECRET,
+            mfaChallengeSecret: env.JWT_MFA_CHALLENGE_SECRET,
+            mfaEncryptionKey: assertMfaEncryptionKey(env.MFA_SECRET_ENCRYPTION_KEY, env.NODE_ENV),
+            region: env.REGION,
+            isProduction: env.NODE_ENV === 'production',
+          },
+          providers: {
+            ...(oauthProvidersConfig.google.clientId
+              ? {
+                  google: {
+                    clientId: oauthProvidersConfig.google.clientId,
+                    clientSecret: oauthProvidersConfig.google.clientSecret,
+                  },
+                }
+              : {}),
+            ...(oauthProvidersConfig.microsoft.clientId
+              ? {
+                  microsoft: {
+                    clientId: oauthProvidersConfig.microsoft.clientId,
+                    clientSecret: oauthProvidersConfig.microsoft.clientSecret,
+                  },
+                }
+              : {}),
+          },
+        })
+      : noopOauthExchange);
   await fastify.register(
     oauthRoutes({
-      providers: oauthProvidersFromEnv(env),
+      providers: oauthProvidersConfig,
       redirectBaseUrl: env.OAUTH_REDIRECT_BASE_URL,
-      exchange: options.oauthExchange ?? noopOauthExchange,
+      exchange: productionExchange,
     }),
     { prefix: '/api/v1/auth' },
   );
@@ -762,12 +884,177 @@ export const buildServer = async (options: BuildServerOptions = {}): Promise<Fas
   return fastify;
 };
 
-/** Helper for the production entry point — boots a DB handle from env. */
-export const buildProductionServer = async (): Promise<FastifyInstance> => {
+export interface ProductionServerHandle {
+  fastify: FastifyInstance;
+  /** pg-boss instance — exposed so callers can inspect queue state. */
+  boss: PgBoss;
+  /**
+   * Graceful shutdown — stops Fastify, then pg-boss, then the DB pool.
+   * Safe to call multiple times.
+   */
+  close: () => Promise<void>;
+}
+
+/**
+ * Production entry point — boots a DB handle, pg-boss, S3 storage, and
+ * all four PgBoss-backed enqueuers (`transcribe`, `bot.join`,
+ * `dsar.export`, `notification.send`). Mirrors the wiring patterns in
+ * `apps/workers/src/index.ts.startWorker` + `apps/bot/src/start.ts.startBotService`.
+ *
+ * Genuinely-blocked seams are intentionally left at their safe defaults
+ * here:
+ *   - `oauthExchange`              — needs JWKS verification + provider token
+ *                                     endpoint calls. The OAuth routes return
+ *                                     503 when GOOGLE/MICROSOFT_OAUTH_*
+ *                                     credentials are unset, so the
+ *                                     `noopOauthExchange` default is safe.
+ *   - `chatStreamer`               — needs an LLM provider; defaults to a
+ *                                     deterministic mock streamer until
+ *                                     ANTHROPIC_API_KEY is wired through
+ *                                     `packages/llm-gateway`.
+ *   - `loadMeetingSummary` / `receivingTenantResolver` /
+ *     `resolveSenderTenantDomain` / `seatCeilingCheck` — optional sharing
+ *     + entitlement-quota seams. When unset, the sharing surface skips
+ *     cross-org resolution and the invite seat-ceiling check no-ops.
+ *     Wire these as the corresponding stories ship.
+ *
+ * Returns a `ProductionServerHandle` with explicit `close()` so the
+ * binary entry-point can wire SIGTERM/SIGINT cleanup.
+ */
+export const buildProductionServer = async (): Promise<ProductionServerHandle> => {
   const env = loadEnv();
+
+  // 1. DB handle — same factory tests use; production passes it through.
   const dbHandle = createDbHandle({
     databaseUrl: env.DATABASE_URL,
     region: env.REGION,
   });
-  return await buildServer({ env, dbHandle });
+
+  // 2. pg-boss — single instance per process. Publishes only; workers +
+  //    apps/bot own consumption.
+  const boss = await createBoss({ databaseUrl: env.DATABASE_URL });
+
+  // 3. S3 storage provider. The S3 SDK import stays inside
+  //    `packages/storage` per the provider-isolation discipline.
+  const storageProvider = createStorageProvider({
+    kind: 's3',
+    region: env.S3_REGION,
+    bucket: env.S3_BUCKET,
+    ...(env.S3_ENDPOINT !== undefined ? { endpoint: env.S3_ENDPOINT } : {}),
+    ...(env.S3_FORCE_PATH_STYLE !== undefined ? { forcePathStyle: env.S3_FORCE_PATH_STYLE } : {}),
+  });
+
+  // 4. PgBoss-backed enqueuers. Each is a thin wrapper around
+  //    `boss.send(<queue>, payload)` — the route layer treats them as
+  //    plain function objects.
+  const transcribeEnqueuer = new PgBossTranscribeEnqueuer(boss);
+  const botJoinEnqueuer = new PgBossBotJoinEnqueuer(boss);
+  const dsarExportEnqueuer = new PgBossDsarExportEnqueuer(boss);
+  const notificationEnqueuer = new PgBossNotificationEnqueuer(boss);
+  const inviteNotificationEnqueuer = new PgBossInviteNotificationEnqueuer(boss);
+  const crmPushEnqueuer = new PgBossCrmPushEnqueuer(boss);
+
+  // KEK keyring for envelope-encrypting CRM tokens. Falls back to a
+  // dev-only deterministic key when AT_REST_KEK_CURRENT_ID is unset
+  // (so portfolio + smoke deploys still boot). Production MUST set the
+  // env vars; the keyring class itself enforces 32-byte raw keys.
+  const kekKeyring = (() => {
+    if (process.env.AT_REST_KEK_CURRENT_ID) {
+      return StaticKekKeyring.fromEnv(process.env);
+    }
+    if (env.NODE_ENV === 'production') {
+      throw new Error(
+        'Production boot requires AT_REST_KEK_CURRENT_ID + AT_REST_KEK_<id> for envelope encryption.',
+      );
+    }
+    // Dev-only fallback — deterministic 32-byte key derived from a
+    // well-known constant. Anyone seeing this in prod has a bug.
+    const devKey = Buffer.alloc(32, 0x42);
+    return new StaticKekKeyring({
+      currentKekId: 'dev-kek',
+      keys: { 'dev-kek': devKey },
+    });
+  })();
+
+  // 5. DSAR portal verification email — wired through the same
+  //    `notification.send` queue. Uses a scoped recipient + an `email`
+  //    payload kind. The notifications gateway is responsible for
+  //    rendering the `dsar` template + dispatching via Postmark/SES/SMTP.
+  const dsarPortalEmailDispatcher = async (input: {
+    email: string;
+    fullName: string;
+    plaintextToken: string;
+    expiresAt: Date;
+  }) => {
+    await boss.send('notification.send', {
+      // Tenant scope is the special platform tenant for public-portal
+      // email — the DSAR-portal route lives outside any specific tenant
+      // because the requester may not yet have a verified tenant
+      // mapping. The notifications gateway honors `tenantId === null`
+      // by routing through the platform-default email provider config.
+      tenantId: null,
+      kind: 'dsar-portal-verify',
+      recipient: { channel: 'email', email: input.email, name: input.fullName },
+      payload: {
+        channel: 'email',
+        context: {
+          fullName: input.fullName,
+          verificationLink: `${env.APP_BASE_URL}/data-rights/verify?token=${encodeURIComponent(input.plaintextToken)}`,
+          expiresAt: input.expiresAt.toISOString(),
+        },
+      },
+      dedupKey: `dsar-portal-${input.email}-${input.expiresAt.getTime()}`,
+    });
+  };
+
+  // LLM-backed chat streamer — only wired when ANTHROPIC_API_KEY is
+  // present. Without the key, the chat route's `buildMockStreamer`
+  // default activates (deterministic word-at-a-time reply built from
+  // retrieved context) and the surface stays functional for demo +
+  // smoke runs.
+  let chatStreamer: ChatStreamer | undefined;
+  if (env.ANTHROPIC_API_KEY) {
+    const { AnthropicProvider } = await import('@aisecretary/llm-gateway');
+    const provider = new AnthropicProvider({
+      apiKey: env.ANTHROPIC_API_KEY,
+      ...(env.ANTHROPIC_MODEL ? { model: env.ANTHROPIC_MODEL } : {}),
+    });
+    chatStreamer = buildLlmGatewayStreamer(provider, { maxOutputTokens: 1024 });
+  }
+
+  const fastify = await buildServer({
+    env,
+    dbHandle,
+    storageProvider,
+    transcribeEnqueuer,
+    botJoinEnqueuer,
+    dsarExportEnqueuer,
+    notificationEnqueuer,
+    inviteNotificationEnqueuer,
+    crmPushEnqueuer,
+    kekKeyring,
+    dsarPortalEmailDispatcher,
+    inviteAppBaseUrl: env.APP_BASE_URL,
+    shareAppBaseUrl: env.APP_BASE_URL,
+    ...(chatStreamer ? { chatStreamer } : {}),
+  });
+
+  let closed = false;
+  const close = async (): Promise<void> => {
+    if (closed) return;
+    closed = true;
+    fastify.log.info('api: shutdown-initiated');
+    try {
+      await fastify.close();
+    } finally {
+      try {
+        await gracefulStopBoss(boss);
+      } finally {
+        await dbHandle.close().catch(() => {});
+      }
+    }
+    fastify.log.info('api: shutdown-complete');
+  };
+
+  return { fastify, boss, close };
 };

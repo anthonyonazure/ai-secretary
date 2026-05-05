@@ -5,6 +5,9 @@ import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useSpeakerTurns } from '../../components/analysis/use-speaker-turns';
+import { BotStatusBadge } from '../../components/bot/bot-status-badge';
+import { InviteBotButton } from '../../components/bot/invite-bot-button';
+import { useBotSessionsForMeeting } from '../../components/bot/use-bot-sessions-for-meeting';
 import { useAuth, useAuthStore } from '../../hooks/use-auth';
 import {
   type MeetingDetailTab,
@@ -54,6 +57,7 @@ export default function MeetingDetailScreen() {
   const turns = turnsQuery.turns;
   const actionItems = actionItemsQuery.data?.items ?? [];
   const isAdmin = user?.role === 'super_admin' || user?.role === 'org_admin';
+  const botSessions = useBotSessionsForMeeting(meetingId);
 
   const tabs = useMemo(
     () =>
@@ -111,6 +115,14 @@ export default function MeetingDetailScreen() {
         <Text className="mb-2 text-xs text-fg-muted" testID="meeting-id-display">
           {meetingId}
         </Text>
+        <View className="mb-3 gap-2" testID="meeting-bot-controls">
+          {botSessions.primarySession ? (
+            <BotStatusBadge session={botSessions.primarySession} />
+          ) : null}
+          {!botSessions.hasActiveSession && meetingId ? (
+            <InviteBotButton meetingId={meetingId} />
+          ) : null}
+        </View>
         {activeTab === 'receipt' ? (
           <Text className="text-base text-fg">Summary lands here once analysis completes.</Text>
         ) : activeTab === 'transcript' ? (

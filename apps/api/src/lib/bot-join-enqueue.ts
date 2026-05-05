@@ -35,3 +35,16 @@ export class InMemoryBotJoinEnqueuer implements BotJoinEnqueuer {
     return id;
   }
 }
+
+export const BOT_JOIN_QUEUE = 'bot.join' as const;
+
+/** pg-boss-backed enqueuer — production wires this in `buildProductionServer()`. */
+export class PgBossBotJoinEnqueuer implements BotJoinEnqueuer {
+  // biome-ignore lint/suspicious/noExplicitAny: pg-boss is the only consumer of this seam in production.
+  constructor(private readonly boss: { send(name: string, data: unknown): Promise<any> }) {}
+
+  async enqueue(payload: BotJoinJobPayload): Promise<string | null> {
+    const id = await this.boss.send(BOT_JOIN_QUEUE, payload);
+    return id ?? null;
+  }
+}

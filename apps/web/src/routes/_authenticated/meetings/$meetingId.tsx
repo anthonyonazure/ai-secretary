@@ -23,6 +23,9 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useSpeakerTurns } from '../../../components/feature/analysis/use-speaker-turns';
+import { BotStatusBadge } from '../../../components/feature/bot/bot-status-badge';
+import { InviteBotButton } from '../../../components/feature/bot/invite-bot-button';
+import { useBotSessionsForMeeting } from '../../../components/feature/bot/use-bot-sessions-for-meeting';
 import { FirstReceiptPolish } from '../../../components/feature/onboarding/first-receipt-polish';
 import { useAuth, useAuthStore } from '../../../hooks/use-auth';
 import {
@@ -58,6 +61,8 @@ function MeetingDetailRoute() {
     staleTime: 30_000,
   });
 
+  const botSessions = useBotSessionsForMeeting(meetingId);
+
   const turns = turnsQuery.turns;
   const actionItems = actionItemsQuery.data?.items ?? [];
 
@@ -79,11 +84,21 @@ function MeetingDetailRoute() {
 
   return (
     <section className="mx-auto flex max-w-3xl flex-col gap-4 px-6 py-8">
-      <header>
-        <h1 className="font-sans text-2xl font-semibold">Meeting</h1>
-        <p className="mt-1 font-mono text-xs text-fg-muted" data-testid="meeting-id-display">
-          {meetingId}
-        </p>
+      <header className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="font-sans text-2xl font-semibold">Meeting</h1>
+            <p className="mt-1 font-mono text-xs text-fg-muted" data-testid="meeting-id-display">
+              {meetingId}
+            </p>
+          </div>
+          <div className="flex items-center gap-2" data-testid="meeting-bot-controls">
+            {botSessions.primarySession ? (
+              <BotStatusBadge session={botSessions.primarySession} />
+            ) : null}
+            {!botSessions.hasActiveSession ? <InviteBotButton meetingId={meetingId} /> : null}
+          </div>
+        </div>
       </header>
 
       <div

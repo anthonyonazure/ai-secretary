@@ -54,3 +54,10 @@ export const botSessionResponseSchema = z.object({
   createdAt: z.string().datetime(),
 });
 export type BotSessionResponse = z.infer<typeof botSessionResponseSchema>;
+
+export const botSessionListResponseSchema = z.object({
+  items: z.array(botSessionResponseSchema),
+  nextCursor: z.string().nullable(),
+  totalCount: z.number().int().nonnegative(),
+});
+export type BotSessionListResponse = z.infer<typeof botSessionListResponseSchema>;

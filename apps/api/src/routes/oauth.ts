@@ -25,12 +25,16 @@ import { ForbiddenError, UnauthorizedError, ValidationError } from '../lib/http-
  * client IDs + secrets via env.
  */
 
-export type OauthExchangeFn = (input: {
+export interface OauthExchangeFnInput {
   provider: OauthProvider;
   code: string;
   codeVerifier?: string;
   redirectUri: string;
-}) => Promise<OauthExchangeResponse | null>;
+}
+
+export type OauthExchangeFn = (
+  input: OauthExchangeFnInput,
+) => Promise<OauthExchangeResponse | null>;
 
 export interface OauthRoutesOptions {
   /**

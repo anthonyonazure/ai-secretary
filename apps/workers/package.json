@@ -28,6 +28,7 @@
     "clean": "rm -rf dist .turbo .tsbuildinfo"
   },
   "dependencies": {
+    "@aisecretary/crm": "workspace:*",
     "@aisecretary/db": "workspace:*",
     "@aisecretary/llm-gateway": "workspace:*",
     "@aisecretary/modules": "workspace:*",

@@ -22,6 +22,8 @@ export * from './schemas/tenant-admin.js';
 export * from './schemas/oauth.js';
 export * from './schemas/upload-escalation.js';
 export * from './schemas/bot-sessions.js';
+export * from './bot-session-display.js';
+export * from './schemas/crm.js';
 export * from './billing/tiers.js';
 export * from './billing/usage.js';
 export * from './clip-bounds.js';

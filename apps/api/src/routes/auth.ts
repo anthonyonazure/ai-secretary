@@ -183,7 +183,13 @@ const buildAuthResponse = async (
   };
 };
 
-const issueSessionAndPersist = async (
+/**
+ * Exported for the OAuth exchange path — given a verified user identity
+ * from a federated provider (Google ID token / Microsoft v2.0 ID token),
+ * mint a session + persist the refresh token. Same code-path the
+ * password login flow uses.
+ */
+export const issueSessionAndPersist = async (
   user: AuthUserRow,
   region: 'us' | 'eu',
   options: AuthRoutesOptions,

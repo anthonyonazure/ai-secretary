@@ -37,3 +37,19 @@ export class InMemoryTranscribeEnqueuer implements TranscribeEnqueuer {
     return id;
   }
 }
+
+export const TRANSCRIBE_QUEUE = 'transcribe' as const;
+
+/**
+ * pg-boss-backed enqueuer — production wires this in
+ * `buildProductionServer()`. Mirrors `apps/bot`'s `PgBossTranscribeEnqueuer`.
+ */
+export class PgBossTranscribeEnqueuer implements TranscribeEnqueuer {
+  // biome-ignore lint/suspicious/noExplicitAny: pg-boss is the only consumer of this seam in production.
+  constructor(private readonly boss: { send(name: string, data: unknown): Promise<any> }) {}
+
+  async enqueue(payload: TranscribeJobPayload): Promise<string | null> {
+    const id = await this.boss.send(TRANSCRIBE_QUEUE, payload);
+    return id ?? null;
+  }
+}

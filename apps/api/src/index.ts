@@ -15,16 +15,15 @@ import { buildProductionServer } from './server.js';
  */
 const main = async (): Promise<void> => {
   const env = loadEnv();
-  const fastify = await buildProductionServer();
+  const handle = await buildProductionServer();
 
   const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
-    fastify.log.info({ signal }, 'shutdown-initiated');
+    handle.fastify.log.info({ signal }, 'shutdown-initiated');
     try {
-      await fastify.close();
-      fastify.log.info('shutdown-complete');
+      await handle.close();
       process.exit(0);
     } catch (err) {
-      fastify.log.error({ err }, 'shutdown-failed');
+      handle.fastify.log.error({ err }, 'shutdown-failed');
       process.exit(1);
     }
   };
@@ -37,9 +36,9 @@ const main = async (): Promise<void> => {
   });
 
   try {
-    await fastify.listen({ port: env.PORT, host: env.HOST });
+    await handle.fastify.listen({ port: env.PORT, host: env.HOST });
   } catch (err) {
-    fastify.log.error({ err }, 'listen-failed');
+    handle.fastify.log.error({ err }, 'listen-failed');
     process.exit(1);
   }
 };

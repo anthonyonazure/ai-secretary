@@ -73,7 +73,13 @@ export type ApiAuditAction =
   | 'bot.session.provisioned'
   | 'bot.session.joined'
   | 'bot.session.ended'
-  | 'bot.session.failed';
+  | 'bot.session.failed'
+  // CRM integrations (Story 15.x / ADR-0003 — packages/crm)
+  | 'crm.connected'
+  | 'crm.disconnected'
+  | 'crm.note-pushed'
+  | 'crm.contact-created'
+  | 'crm.push-failed';
 
 /**
  * Runtime mirror of `ApiAuditAction`. Used by:
@@ -160,6 +166,12 @@ export const AUDIT_ACTIONS = [
   'bot.session.joined',
   'bot.session.ended',
   'bot.session.failed',
+  // CRM integrations (Story 15.x / ADR-0003 — packages/crm)
+  'crm.connected',
+  'crm.disconnected',
+  'crm.note-pushed',
+  'crm.contact-created',
+  'crm.push-failed',
 ] as const satisfies readonly ApiAuditAction[];
 
 export type AuditActionRuntime = (typeof AUDIT_ACTIONS)[number];

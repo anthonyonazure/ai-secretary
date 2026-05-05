@@ -1,10 +1,129 @@
 # HANDOFF — AI Secretary work in progress
 
-**Last updated:** 2026-05-01 (Bot service stub + E2E suite shipped — 1659 tests across 17 packages passing)
+**Last updated:** 2026-05-05 (Portfolio-completion sweep: full CRM gateway + tenant_integrations + envelope encryption + Chrome extension + LLM streamer + real OAuth + tenant-state-check plugin + compliance docs + BMAD design/research artifacts + Docker/Railway scaffolding — 1715 tests across 19 packages passing)
 
 ## Next-session prompt (copy-paste this to launch)
 
-> Resume the AI Secretary work. Read `HANDOFF.md` (top section) + `~/.claude/projects/-Users-anthony-ai-secretary/memory/MEMORY.md`. State as of 2026-05-01: 1659 tests across 17 packages, all green. **Bot service stub** is feature-complete inline (chunks 1–3.5): `packages/bot` provider abstraction + FSM + Mock/Zoom/Teams skeletons; `bot_sessions` table + RLS + Drizzle schema + repository + watchdog reader; `apps/bot` (renamed `@aisecretary/bot-service`) FSM-driven `bot.join` queue handler; `POST /api/v1/bot-sessions` endpoint; `RecordingsChunkUploadAudioSink` that streams bot-captured PCM into the existing recordings → transcribe → speaker_turns pipeline (same path mobile/web uploads use). **E2E suite** scaffolded: Playwright config + InMemory-stack fixture + signin→inbox→meeting golden-path spec, chromium + webkit, CI job wired. The remaining work is genuinely infrastructure-bound: (a) **real provider creds** — Anthropic, OpenAI, Whisper, Postmark/SES, Stripe, Nylas, Zoom, Teams, Expo Push, Bedrock, Voyage (Tier 1 alone gets a working US production environment). (b) **`apps/bot` production boot** — `apps/bot/src/index.ts` is currently re-exports only; needs the same `createDb` + `createBoss` + Redis + Postgres-audit + storage wiring `apps/workers` already has. ~80 lines once Tier 1 + Tier 3 creds land. (c) **production deploy bootstrap** — `buildProductionServer()` + Railway US/EU. (d) **real Zoom/Teams SDKs** — `@zoom/meetingsdk` + Microsoft Graph Communications inside `packages/bot/src/providers/{zoom,teams}.ts` (the multi-week build; isolation gate + cred-validating constructors already in place). (e) **GET endpoints** — `/api/v1/bot-sessions/:id` + paginated list (repository surface ready, just route + tests). (f) **web/mobile bot UI** — bot-status badge on meeting detail, invite-bot CTA; mobile already has `useBotStatusState`. Web meeting-detail still placeholder; E2E spec flagged it. (g) **designer assets** — 3 empty-state illustrations + 2 motion + 1 hero; UX research card-sort + customer-dev interviews. (h) **ADR promotion** — 0002–0006 PROPOSED in `arch-addendums.md`; the bot session FSM + cross-tenant audit pattern have now had first-implementation validation (ADR-0006 eligible for promotion). If continuing inline work, the highest-leverage moves are the GET endpoints + web meeting-detail page (closes the placeholder E2E flagged), or ADR promotion.
+> Resume the AI Secretary work. Read `HANDOFF.md` (top section) + `~/.claude/projects/-Users-anthony-ai-secretary/memory/MEMORY.md`. State as of 2026-05-05: **1682 tests across 18 packages, all green** (+23 since 2026-05-01). Lint + typecheck + provider-isolation gates clean. Today's session closed five of the eight remaining-work items: **bot-sessions GET endpoints** (`GET /api/v1/bot-sessions/:sessionId` + paginated list with `meetingId` / `mineOnly` filters; 10 new route tests), **web + mobile bot UI** (`<BotStatusBadge>` + `<InviteBotButton>` mounted on both meeting-detail screens, polled via React Query, derivation in `@aisecretary/shared/bot-session-display`), **`apps/bot` production boot** (`startBotService(env)` + `apps/bot/src/start.ts` wires DrizzleBotSessionsReadWriter / DrizzleRecordingsSinkWriter / DrizzleBotAuditLogger / PgBossTranscribeEnqueuer / RedisHeartbeatPublisher / S3 storage; cred-gated Zoom/Teams config; in-memory heartbeat fallback when REDIS_URL unset), **E2E spec extension** (asserts the invite-bot CTA renders on every meeting), and **ADR promotion 0002 / 0005 / 0006** to `docs/decisions/` (style dictionary, consent legal basis, cross-tenant audit; 0003 still PROPOSED until F5-CRM ships, 0004 PROPOSED until full F2-admin FSM lands). Genuinely-blocked remaining work: (a) **real provider creds** — Anthropic, OpenAI, Whisper, Postmark/SES, Stripe, Nylas, Zoom, Teams, Expo Push, Bedrock, Voyage. The boot scaffolding now consumes them via env when present. (b) **production deploy bootstrap** — `buildProductionServer()` + Railway US/EU (apps/api equivalent of what apps/bot + apps/workers already have). (c) **real Zoom/Teams SDKs** — `@zoom/meetingsdk` + Microsoft Graph Communications inside `packages/bot/src/providers/{zoom,teams}.ts` (multi-week build; cred-validating constructors already in place). (d) **designer assets** — 3 empty-state illustrations + 2 motion + 1 hero; UX research card-sort + customer-dev interviews. (e) **ADR-0003 / ADR-0004 promotion** — wait for F5-CRM (0003) and full F2-admin onboarding FSM (0004). If continuing inline work, the highest-leverage move is **`buildProductionServer()` + Railway deploy bootstrap** for `apps/api` (mirrors `startBotService` + `startWorker` patterns).
+
+## Portfolio-completion sweep quick log (2026-05-05)
+
+Net 1682 → 1715 tests (+33) across 19 packages (+1 — `@aisecretary/crm` is now a real package). Lint + typecheck + provider-isolation gates green throughout.
+
+**`@aisecretary/crm` package** (`packages/crm/`, +11 tests):
+- Provider abstraction matching the `packages/llm-gateway` pattern: `CrmProvider` interface + `MockCrmProvider` + cred-validating `HubspotCrmProvider` / `SalesforceCrmProvider` / `PipedriveCrmProvider` (raw `fetch`-based — SDK boundary preserved).
+- `CrmGateway` with retry policy (`CrmRateLimitError` retries with backoff; `CrmAuthError` does not).
+- `selectCrmProviderKind()` selector + `createCrmProvider()` factory.
+- Audit-action union + `CRM_AUDIT_ACTIONS` runtime list.
+- Provider-isolation script (`scripts/check-isolation.ts`) bans `@hubspot/api-client`, `jsforce`, `pipedrive` outside the package.
+
+**`tenant_integrations` table + envelope encryption** (`packages/db/`, +8 tests):
+- Migration `202605051000_create_tenant_integrations.sql` — `integration_provider` + `integration_status` enums, JSONB envelope ciphertext, partial unique index on `(tenant_id, provider) WHERE status='active'`, expiring-token sweep index.
+- RLS policy `0017_rls_tenant_integrations.sql` — strict tenant isolation.
+- Drizzle schema `tenant-integrations.ts` with `EncryptedToken` JSONB type.
+- KMS-style envelope encryption library `packages/db/src/lib/envelope-encryption.ts` — AES-256-GCM with rotatable KEK; `StaticKekKeyring.fromEnv()` for portfolio + dev; round-trip + tamper-detection + KEK-rotation tests.
+- Erasure-cascade entry registered.
+
+**`/api/v1/crm/*` routes** (`apps/api/src/routes/crm.ts`, +10 tests):
+- `GET    /integrations` — list connected.
+- `POST   /integrations/:provider` — finalize OAuth callback (validates with provider's `whoAmI()` before persisting; envelope-encrypts tokens).
+- `DELETE /integrations/:integrationId` — soft-revoke.
+- `POST   /push` — enqueue `crm.push` job with deterministic `(meetingId, integrationId, contactEmail)` idempotency key.
+- Wire schema in `packages/shared/src/schemas/crm.ts`.
+- Audit actions: `crm.connected` / `crm.disconnected` / `crm.note-pushed` / `crm.contact-created` / `crm.push-failed`.
+
+**`crm.push` worker** (`apps/workers/src/handlers/crm-push.ts`, +4 tests):
+- Resolves meeting summary + action items, decrypts OAuth tokens via the KEK keyring, pushes through `@aisecretary/crm`.
+- `CrmAuthError` flips integration to `status='error'` (no retry) so the API + extension can surface a reconnect CTA.
+
+**Chrome extension** (`apps/extension/`, real surface):
+- `popup.html` + `popup.ts` — pairing form + connected-integration list + reset-token affordance, dark/light mode via `prefers-color-scheme`.
+- `lib/api-client.ts` — typed wrapper over `GET /crm/integrations` + `POST /crm/push`.
+- `lib/storage.ts` — `chrome.storage.local` wrapper for the device-scoped access token.
+- Manifest already wired to HubSpot / Salesforce / Lightning / Pipedrive hosts.
+
+**LLM gateway chat streamer** (`apps/api/src/routes/chat.ts`):
+- `buildLlmGatewayStreamer(provider)` bridges `@aisecretary/llm-gateway`'s `LlmProvider.chatStream(...)` to the route's `ChatStreamer` shape.
+- `buildProductionServer` instantiates `AnthropicProvider` when `ANTHROPIC_API_KEY` is set; defaults to `buildMockStreamer` otherwise so the chat surface stays functional in demo/smoke runs.
+
+**Real OAuth code-exchange** (`apps/api/src/lib/oauth-exchange.ts`):
+- Full impl: provider token-endpoint exchange + `jose` JWKS verification + audience/issuer/maxTokenAge checks + email-claim extraction + `findUserByEmail` → `issueSessionAndPersist`.
+- Federated SIGN-IN only (no SIGN-UP); enforces ADR-0004's invite-only onboarding posture.
+- `buildProductionServer` wires it automatically when `GOOGLE_OAUTH_CLIENT_ID` or `MICROSOFT_OAUTH_CLIENT_ID` is set.
+
+**`tenant-state-check` plugin** (ADR-0004 — `apps/api/src/plugins/tenant-state-check.ts`):
+- Gates mutating recording-pipeline routes when `tenant_state ∉ {active, provisioning}`.
+- Honors trial-fields extension: `trial_expired_at` non-null → 402 Payment Required.
+- Routes opt in via `config.requireTenantState: true`.
+
+**Compliance docs** (`docs/compliance/`):
+- [`README.md`](docs/compliance/README.md) — index linking every control to its implementation file.
+- [`hipaa.md`](docs/compliance/hipaa.md) — § 164.308/310/312 mapping + posture-routing matrix + breach-notification.
+- [`gdpr.md`](docs/compliance/gdpr.md) — Articles 5/6/7/12-22/25/28/30/32/33-34/35/44-49 + sub-processor list.
+- [`soc2.md`](docs/compliance/soc2.md) — TSC Common Criteria + Availability + Confidentiality + Privacy mapping with evidence artifacts per control.
+- [`threat-model.md`](docs/compliance/threat-model.md) — STRIDE per surface + compensating controls.
+- [`dpa-template.md`](docs/compliance/dpa-template.md) — full-text DPA with Annexes I (subject-matter) + II (technical measures) + III (SCC schedules).
+
+**BMAD personas — design + research** (`_bmad-output/`):
+- [`research/customer-dev-synthesis-2026-05-05.md`](_bmad-output/research/customer-dev-synthesis-2026-05-05.md) — 5 simulated personas covering all 8 verticals (SDR, HR partner, adjunct professor, solo therapist (HIPAA), engineering manager (GDPR/Berlin)) + 5 cross-cutting findings + 5 product implications.
+- [`design/empty-state-illustrations-brief-2026-05-05.md`](_bmad-output/design/empty-state-illustrations-brief-2026-05-05.md) — 6 assets (3 empty-state SVGs + 2 motion specs + 1 marketing hero) with token references, reduced-motion fallbacks, and acceptance criteria.
+
+**Docker + Railway** (`infra/`):
+- `infra/docker/bot.Dockerfile` — multi-stage build for `@aisecretary/bot-service` (was missing).
+- `infra/railway/services.json` — added `bot` service definition with full env-var contract.
+- `.env.example` extended with `APP_BASE_URL`, `AT_REST_KEK_*`, bot service env vars, and Anthropic model override.
+
+**README + LICENSE** (root):
+- README rewritten for portfolio audience: badges, ASCII architecture diagram, doc index, tech-stack table, repo-layout tree, deployment commands, ADR table, compliance posture matrix.
+- `LICENSE` file added (MIT).
+
+**Pre-existing surfaces touched**:
+- `apps/api/src/server.ts` wired `crmIntegrationsRepository` / `crmPushEnqueuer` / `kekKeyring` / `tenantStateReader` / `chatStreamer` / `httpOauthExchange` options through `buildServer` + `buildProductionServer`.
+- `apps/api/src/lib/audit-types.ts` extended with the 5 CRM audit actions.
+
+## Bot GET endpoints + web/mobile bot UI + production boot + ADR promotion quick log (2026-05-05)
+
+Net 1659 → 1682 tests (+23) across 18 packages. Lint + typecheck + isolation + audit-coverage gates green. ~30 source files added/modified across api / web / mobile / bot-service / shared / docs.
+
+**Bot-sessions GET endpoints** (`apps/api/src/routes/bot-sessions.ts`, +10 route tests):
+- `GET /api/v1/bot-sessions/:sessionId` — tenant-scoped findById; cross-tenant probe → 404 (the meetings-route convention); 422 on non-UUID; 401/403 without auth.
+- `GET /api/v1/bot-sessions` — cursor-paginated; `meetingId` filter (drives the meeting-detail badge); `mineOnly` (default true; `mineOnly=false` for admin-wide views); `limit` capped at 100.
+- Wire schema extended with `botSessionListResponseSchema` (`packages/shared/src/schemas/bot-sessions.ts`).
+
+**Web + mobile bot UI** (mounted on both meeting-detail screens):
+- `packages/shared/src/bot-session-display.ts` — wire-status (`provisioning|joined|ended|failed`) → label/tone derivation; `pickPrimaryBotSession` selects active over terminal; 8 unit tests in `packages/shared`.
+- `apps/web/src/lib/bot-sessions/api-client.ts` + `apps/mobile/lib/bot-sessions/api-client.ts` — GET + POST wrappers with zod validation.
+- `apps/web/src/components/feature/bot/{bot-status-badge,invite-bot-button,use-bot-sessions-for-meeting}.tsx` + mobile counterpart (`apps/mobile/components/bot/`).
+- Polling: React Query refetches every 8s while the primary session is in `provisioning|joined`, stops once it lands in `ended|failed`.
+- Mounted on `apps/web/src/routes/_authenticated/meetings/$meetingId.tsx` + `apps/mobile/app/meetings/[meetingId].tsx`.
+
+**`apps/bot` production boot** (`apps/bot/src/start.ts` + new `apps/bot/src/env.ts`):
+- `startBotService(env)` mirrors `apps/workers/src/index.ts.startWorker` — createDb + createBoss + Redis (optional) + S3 storage + Drizzle adapters + cred-gated provider config.
+- `DrizzleBotSessionsReadWriter` / `DrizzleRecordingsSinkWriter` / `DrizzleBotAuditLogger` — direct `packages/db` impls satisfying the structural seams; `apps/bot` does NOT import from `apps/api` (mirror of the workers convention).
+- `PgBossTranscribeEnqueuer` — sends to the same `transcribe` queue mobile/web uploads use, so bot-captured audio runs the existing pipeline unchanged.
+- `RedisHeartbeatPublisher` — `SETEX heartbeat:bot:<sessionId>` every 30s (TTL 90s) per the existing watchdog protocol; falls back to `InMemoryHeartbeatPublisher` when `REDIS_URL` is unset (with a production warning).
+- Provider config: Zoom S2S OAuth (account ID + client ID + client secret + region) + Teams Graph (azureTenantId + client ID + client secret + region) — only attached when all required fields are present; cred-validating constructors throw at handler invocation when partial.
+- New deps in `apps/bot/package.json`: `drizzle-orm@^0.36`, `ioredis@^5.4`, `pg-boss@^10.1`, `tsx@^4.19` (dev).
+- Entry-point `main()` re-added in `apps/bot/src/index.ts` for `node dist/index.js`.
+
+**E2E spec extension** (`e2e/specs/inbox-to-action.spec.ts`):
+- Asserts `[data-testid=meeting-bot-controls]` is visible and contains `[data-testid=invite-bot-cta]` on every meeting (default state, no active session).
+
+**`apps/api` production boot** (`apps/api/src/server.ts.buildProductionServer()`):
+- Now returns a `ProductionServerHandle` with `{ fastify, boss, close() }` rather than just the FastifyInstance. `apps/api/src/index.ts` updated to use `handle.close()` for graceful shutdown.
+- Wires pg-boss via the new `apps/api/src/lib/pgboss.ts` (mirrors `apps/workers` + `apps/bot`).
+- Wires S3 storage from env (S3_BUCKET / S3_REGION / S3_ENDPOINT / S3_FORCE_PATH_STYLE).
+- Four PgBoss-backed enqueuers added next to their existing in-memory siblings: `PgBossTranscribeEnqueuer` ([transcribe-enqueue.ts](ai-secretary/apps/api/src/lib/transcribe-enqueue.ts)), `PgBossBotJoinEnqueuer` ([bot-join-enqueue.ts](ai-secretary/apps/api/src/lib/bot-join-enqueue.ts)), `PgBossDsarExportEnqueuer` ([dsar.ts](ai-secretary/apps/api/src/routes/dsar.ts)), `PgBossNotificationEnqueuer` ([recordings.ts](ai-secretary/apps/api/src/routes/recordings.ts)), `PgBossInviteNotificationEnqueuer` ([invites.ts](ai-secretary/apps/api/src/routes/invites.ts)) — each is a thin `boss.send(<queue>, payload)` wrapper.
+- DSAR portal email dispatcher wired through `notification.send` queue (kind `dsar-portal-verify`, dedup keyed by email + expiresAt).
+- New env vars: `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT?`, `S3_FORCE_PATH_STYLE?`, `APP_BASE_URL` (defaults to `http://localhost:3001`).
+- Genuinely-blocked seams left at safe defaults: `oauthExchange` (returns 503 when GOOGLE/MICROSOFT_OAUTH_* unset), `chatStreamer` (deterministic mock until ANTHROPIC_API_KEY wires through llm-gateway), `loadMeetingSummary` / `receivingTenantResolver` / `resolveSenderTenantDomain` / `seatCeilingCheck` (sharing + entitlement-quota seams not yet first-implementation).
+
+**ADR promotion** (3 of 5):
+- `docs/decisions/0002-style-dictionary-token-pipeline.md` — ACCEPTED (Phase 0 first-implementation validates).
+- `docs/decisions/0005-consent-legal-basis-and-diarization-exclusion.md` — ACCEPTED (`packages/consent` runtime first-implementation validates).
+- `docs/decisions/0006-cross-tenant-audit-via-inbound-shares.md` — ACCEPTED (cross-org policy + inbound-shares first-implementation validates).
+- `docs/decisions/0003-server-side-crm-gateway.md` — PROPOSED (still waiting on F5-CRM implementation).
+- `docs/decisions/0004-tenant-lifecycle-fsm-and-dpa-gate.md` — PROPOSED (trial-fields extension shipped; full F2-admin FSM still TODO).
 
 ## Bot service stub + E2E suite quick log (2026-05-01)
 
@@ -132,7 +251,8 @@ auth-error, disclosure-copy-form, invite-revoke-button, audit-log-table.
 - ✅ **Phase 1 fifth cut** — Story 2.2 (real transcription provider — Whisper API + faster-whisper + mock; per-tenant compliance routing; worker handler closes capture-to-citation loop; CI provider-isolation gate). Diarization deferred to Story 2.3 (multi-speaker turns get `speaker: null` placeholder).
 - ✅ **Phase 1 sixth cut** — Story 2.1 follow-up: 3 new GET endpoints (`/recordings/:id/play`, `/meetings/:id/speaker-turns`, `/meetings/:id/playback-url`) + `MeetingsRepository` seam + web/mobile clients consume real backend reads via React Query (`useSpeakerTurns` + new `usePlaybackUrl`). Citation loop closed on the client side.
 - ✅ **Phase 1 seventh cut** — Story 1.6: TanStack Router + `AppShell.Inbox` (D1 default) + `AppShell.Cards` (D3 single-user) on web. `App.tsx` state-toggle deleted. Auth gate at `_authenticated.tsx` `beforeLoad`. RecordingStatusPill slot top-right of every shell, subscribed to a Zustand `recording-state-store` that the controller publishes to (no controller restructure). Shell selection via persisted Zustand store + `?mode=cards` URL param (real `tenant.mode` field deferred). Mobile leverages existing Expo Router. See "Phase 1 sixth + seventh cuts" below.
-- ⏳ **Phase 1 next** — Stories 4.4/4.5 (heartbeat + retry-budget escalation; consume `packages/notifications`); Story 1.7 (F2 first-launch + tab-closer re-engagement; mounts at `_authenticated/inbox.tsx`); 1.5b/c/d/e auth follow-ups; Story 2.3 (diarization). Production deploy is one `buildProductionServer()` call away.
+- ✅ **2026-05-05 sweep** — bot-sessions GET endpoints + paginated list + meetingId/mineOnly filters; web/mobile bot UI (BotStatusBadge + InviteBotButton mounted on both meeting-detail screens); `apps/bot` production boot (`startBotService(env)` + drizzle adapters + Redis heartbeat + cred-gated providers); `apps/api` production boot fully wired (`buildProductionServer()` with pg-boss + S3 + 4 PgBoss-backed enqueuers + DSAR portal email dispatcher); E2E asserts invite-bot CTA; ADRs 0002 / 0005 / 0006 promoted to ACCEPTED in `docs/decisions/`. See "Bot GET endpoints + web/mobile bot UI + production boot + ADR promotion quick log" above.
+- ⏳ **Phase 1 next** — production deploy (Railway US/EU); needs Tier 1 creds (Anthropic, OpenAI, Whisper, Postmark/SES, Stripe, Nylas, Zoom, Teams, Expo Push, Bedrock, Voyage). ADR-0003 (server-side CRM gateway) + ADR-0004 (full F2-admin FSM) still PROPOSED until first-implementation lands. Real Zoom/Teams SDKs inside `packages/bot/src/providers/{zoom,teams}.ts` are the multi-week build (cred-validating constructors already in place).
 
 ## Phase 0 outcome (2026-04-29)
 

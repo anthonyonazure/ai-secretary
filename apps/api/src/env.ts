@@ -57,6 +57,35 @@ export const envSchema = z.object({
   OAUTH_REDIRECT_BASE_URL: z.string().url().default('http://localhost:3001'),
   /** Pino log level. */
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
+
+  /** S3 bucket for recording audio. Mirrors apps/workers + apps/bot. */
+  S3_BUCKET: z.string().min(1).default('aisecretary-recordings-local'),
+  S3_REGION: z.string().min(1).default('us-east-1'),
+  /** Optional S3 endpoint override (MinIO / LocalStack / R2). */
+  S3_ENDPOINT: z.string().url().optional(),
+  /** Force path-style addressing (for MinIO / LocalStack). */
+  S3_FORCE_PATH_STYLE: z
+    .union([z.literal('true'), z.literal('false')])
+    .optional()
+    .transform((v) => v === 'true'),
+
+  /**
+   * Public-facing app base URL. Used to format share links (`/share/:token`),
+   * accept-invite URLs (`/invites/:token/accept`), and DSAR portal links.
+   */
+  APP_BASE_URL: z.string().url().default('http://localhost:3001'),
+
+  /**
+   * Anthropic API key — when set, the chat route's RAG streamer goes
+   * through `AnthropicProvider`. Unset → mock streamer (deterministic
+   * word-at-a-time reply built from retrieved context). The chat
+   * surface still works in either mode; the mock is faithful to the
+   * retrieval pipeline so the citation chips + faithfulness banners
+   * exercise the same code paths.
+   */
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  /** Optional Anthropic model override. Defaults to claude-sonnet-4-6. */
+  ANTHROPIC_MODEL: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -4,33 +4,31 @@
  * Producer-side worker that consumes `bot.join` jobs from pg-boss and
  * drives the `bot_sessions` FSM via `@aisecretary/bot`. Receive-side
  * substrate (heartbeat watchdog, notification dispatch, mobile/web
- * status surface) is already in `apps/workers` + `packages/notifications`
- * + `apps/mobile`.
+ * status surface) lives in `apps/workers` + `packages/notifications` +
+ * `apps/mobile`.
  *
- * Public surface (re-exported for the production boot module):
- *   - `BOT_JOIN_QUEUE` — pg-boss queue name (`'bot.join'`)
- *   - `createBotJoinHandler` — the handler factory; returns a
- *     `(job) => Promise<void>` that production wraps in
- *     `await boss.work(BOT_JOIN_QUEUE, async (jobs) => { for (const j of
- *     jobs) await handler(j); })`
- *   - `BotJoinHandlerDeps` + handler-side seams (`AudioSink`,
- *     `HeartbeatPublisher`, `BotAuditLogger`, `BotSessionsReadWriter`)
+ * Production boot lives in `./start.ts` (`startBotService(env)`):
+ *   1. createDb / createBoss / Redis (REDIS_URL optional in non-prod)
+ *   2. Drizzle-backed BotSessionsReadWriter / RecordingsSinkWriter /
+ *      BotAuditLogger
+ *   3. PgBoss-backed TranscribeEnqueuer
+ *   4. Redis-backed HeartbeatPublisher (in-memory fallback when
+ *      REDIS_URL is unset, with a production warning)
+ *   5. Provider config from env (Zoom S2S OAuth, Teams Graph). When
+ *      creds are missing, the cred-validating provider constructors in
+ *      `packages/bot/src/providers/{zoom,teams}.ts` throw
+ *      `BotProviderUnavailableError` at handler invocation time. The
+ *      service still boots cleanly.
  *
- * Production boot wiring (TODO — chunk 3.5 + multi-week build):
- *   1. createDb / createBoss / Redis client (per `apps/workers` pattern)
- *   2. Real `AudioSink` — chunked upload into the `recordings` pipeline
- *   3. Real `HeartbeatPublisher` — Redis SETEX `heartbeat:bot:<sid>`
- *   4. Real `BotAuditLogger` — postgres-backed sink, mirroring the
- *      worker-side audit logger added in a later sibling story
- *   5. Per-region provider configs (Zoom S2S OAuth, Teams Graph) — only
- *      after creds land
- *
- * The handler itself is fully exercised against MockBotProvider +
- * InMemory* seams in `bot-join.test.ts`; the production boot is the
- * remaining thin orchestration layer.
+ * `main` runs as the entry point when invoked directly (`node
+ * dist/index.js`); test imports go through `startBotService` directly.
  */
 
-export const APP_NAME = '@aisecretary/bot-service';
+import { loadEnv } from './env.js';
+import { startBotService } from './start.js';
+
+export { APP_NAME, type BotServiceHandle, startBotService } from './start.js';
+export { type Env, loadEnv, resolveMode } from './env.js';
 
 export {
   BOT_JOIN_QUEUE,
@@ -68,3 +66,39 @@ export {
 } from './lib/recordings-chunk-upload-audio-sink.js';
 
 export { WAV_STREAMING_SIZE_SENTINEL, wavHeader } from './lib/wav-encoder.js';
+
+export { DrizzleBotSessionsReadWriter } from './lib/drizzle-bot-sessions-readwriter.js';
+export { DrizzleRecordingsSinkWriter } from './lib/drizzle-recordings-sink-writer.js';
+export { DrizzleBotAuditLogger } from './lib/drizzle-bot-audit-logger.js';
+export {
+  PgBossTranscribeEnqueuer,
+  TRANSCRIBE_QUEUE,
+} from './lib/pgboss-transcribe-enqueuer.js';
+export { RedisHeartbeatPublisher } from './lib/redis-heartbeat-publisher.js';
+export { createBoss, gracefulStop } from './lib/boss.js';
+
+const main = async (): Promise<void> => {
+  const env = loadEnv();
+  const handle = await startBotService(env);
+
+  const shutdown = async (): Promise<void> => {
+    try {
+      await handle.close();
+      process.exit(0);
+    } catch {
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGTERM', () => {
+    void shutdown();
+  });
+  process.on('SIGINT', () => {
+    void shutdown();
+  });
+};
+
+const isMain = import.meta.url === `file://${process.argv[1]}`;
+if (isMain) {
+  void main();
+}

@@ -280,4 +280,46 @@ export const buildMockStreamer = (): ChatStreamer => {
   };
 };
 
+/**
+ * Production streamer — bridges an `@aisecretary/llm-gateway`
+ * `LlmProvider` to the `ChatStreamer` shape the chat route expects.
+ *
+ * Production wiring lives in `buildProductionServer()`: when
+ * ANTHROPIC_API_KEY is set, instantiate `AnthropicProvider` and pass
+ * it here. Without the key, the route falls back to `buildMockStreamer`.
+ */
+export const buildLlmGatewayStreamer = (
+  provider: import('@aisecretary/llm-gateway').LlmProvider,
+  options: { maxOutputTokens?: number; temperature?: number } = {},
+): ChatStreamer => {
+  return async function* gatewayStream({ tenantId, systemPrompt, messages, context }) {
+    const augmentedMessages: import('@aisecretary/llm-gateway').ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      ...(context
+        ? [
+            {
+              role: 'system' as const,
+              content: `<retrieved-context>\n${context}\n</retrieved-context>`,
+            },
+          ]
+        : []),
+      ...messages.map((m) => ({ role: m.role, content: m.content })),
+    ];
+    const request: import('@aisecretary/llm-gateway').ChatRequest = {
+      messages: augmentedMessages,
+      tenantId,
+      ...(options.maxOutputTokens !== undefined
+        ? { maxOutputTokens: options.maxOutputTokens }
+        : {}),
+      ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+    };
+    for await (const event of provider.chatStream(request)) {
+      if (event.kind === 'token') {
+        yield event.text;
+      }
+      // `done` + `error` events terminate iteration; we don't surface them.
+    }
+  };
+};
+
 const stripMarks = (s: string): string => s.replace(/<\/?mark>/g, '');

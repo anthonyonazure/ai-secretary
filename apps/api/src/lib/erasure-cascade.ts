@@ -197,6 +197,19 @@ export const ERASURE_CASCADE: readonly ErasureCascadeEntry[] = [
     notes:
       'Bot session FSM rows. FK ON DELETE CASCADE from tenants handles erasure; external_meeting_passcode is sensitive but the row itself goes away. Owned by Story 9.x (packages/bot).',
   },
+  {
+    // Story 15.x / ADR-0003: connected CRM integrations (HubSpot,
+    // Salesforce, Pipedrive). FK CASCADE from tenants handles
+    // erasure; the encrypted_token envelope is destroyed alongside
+    // the row, so the wrapped DEK becomes unrecoverable. The remote
+    // OAuth grant on the CRM side must be revoked separately by the
+    // tenant-close flow before this cascade runs (see
+    // docs/runbook/tenant-close.md).
+    table: 'tenant_integrations',
+    strategy: 'cascade',
+    notes:
+      'CRM OAuth tokens (envelope-encrypted). FK CASCADE from tenants handles erasure; remote OAuth grant must be revoked separately. Owned by Story 15.x (packages/crm) / ADR-0003.',
+  },
 ] as const;
 
 /** Lookup helper — used by the DSAR worker and the coverage test. */

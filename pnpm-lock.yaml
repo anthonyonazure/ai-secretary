@@ -38,9 +38,15 @@ importers:
       '@aisecretary/consent':
         specifier: workspace:*
         version: link:../../packages/consent
+      '@aisecretary/crm':
+        specifier: workspace:*
+        version: link:../../packages/crm
       '@aisecretary/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@aisecretary/llm-gateway':
+        specifier: workspace:*
+        version: link:../../packages/llm-gateway
       '@aisecretary/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
@@ -74,6 +80,12 @@ importers:
       ioredis:
         specifier: ^5.4.0
         version: 5.10.1
+      jose:
+        specifier: ^5.9.0
+        version: 5.10.0
+      pg-boss:
+        specifier: ^10.1.0
+        version: 10.4.2
       pino:
         specifier: ^9.0.0
         version: 9.14.0
@@ -114,6 +126,15 @@ importers:
       '@aisecretary/storage':
         specifier: workspace:*
         version: link:../../packages/storage
+      drizzle-orm:
+        specifier: ^0.36.0
+        version: 0.36.4(@types/react@19.0.14)(pg@8.20.0)(postgres@3.4.9)(react@19.0.0)
+      ioredis:
+        specifier: ^5.4.0
+        version: 5.10.1
+      pg-boss:
+        specifier: ^10.1.0
+        version: 10.4.2
       pino:
         specifier: ^9.5.0
         version: 9.14.0
@@ -121,6 +142,9 @@ importers:
         specifier: ^3.23.0
         version: 3.25.76
     devDependencies:
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
@@ -385,6 +409,9 @@ importers:
 
   apps/workers:
     dependencies:
+      '@aisecretary/crm':
+        specifier: workspace:*
+        version: link:../../packages/crm
       '@aisecretary/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -547,9 +574,15 @@ importers:
 
   packages/crm:
     devDependencies:
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(jsdom@25.0.1)(lightningcss@1.27.0)(terser@5.46.2)
 
   packages/db:
     dependencies:

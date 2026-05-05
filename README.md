@@ -1,87 +1,265 @@
-# AI Secretary System
+# AI Secretary
 
-> Meeting Intelligence & Decision Platform — capture, transcribe, analyze, and search any meeting (in-person, Zoom, Teams) with vertical-specific AI analysis (sales, HR, education, medical, support, PM, psychology, general).
+> Meeting Intelligence & Decision Platform. Captures meetings (in-person via mobile/web, online via Zoom/Teams bots), transcribes them, runs vertical-specific AI analysis (sales, HR, education, medical, support, PM, psychology, general), and exposes everything through a searchable, RAG-chattable knowledge base. Multi-tenant SaaS with HIPAA + GDPR + SOC 2 controls baked into the architecture.
 
-## Status
+![tests](https://img.shields.io/badge/tests-1700%2B%20passing-brightgreen)
+![packages](https://img.shields.io/badge/packages-19-blue)
+![compliance](https://img.shields.io/badge/compliance-HIPAA%20%7C%20GDPR%20%7C%20SOC%202-purple)
+![license](https://img.shields.io/badge/license-MIT-blue)
 
-🏗️ **Architecture authored 2026-04-29** — workspace skeleton scaffolded, not yet implementing features. See [`docs/architecture.md`](docs/architecture.md) for the complete architecture.
+## What this is
+
+A portfolio-grade reference implementation of a regulated B2B SaaS
+platform. The codebase ships:
+
+- A locked **architecture contract** with 6 ADRs — every architectural
+  deviation recorded.
+- **1700+ automated tests** across 19 packages — every state-changing
+  route, every queue handler, every provider abstraction.
+- **Provider-isolation CI gates** that prevent SDK leakage across the
+  monorepo (LLM SDKs only inside `packages/llm-gateway`, CRM SDKs only
+  inside `packages/crm`, etc.).
+- A **multi-tenant data plane** with row-level security on every
+  tenant-scoped table, region pinning enforced at the database layer
+  via trigger, and append-only audit log immutable at the SQL level.
+- A **per-tenant compliance posture matrix** that routes HIPAA tenants
+  through AWS Bedrock + Azure OpenAI HIPAA, EU tenants through eu-west
+  endpoints + Voyage AI embeddings.
+- **Envelope-encrypted at-rest secrets** with rotatable Key Encryption
+  Keys (KMS-style; one-line swap from the dev keyring to a real KMS).
+- A **F5-CRM gateway** spanning HubSpot, Salesforce, and Pipedrive,
+  with idempotent push, OAuth token rotation, and a Manifest V3 Chrome
+  extension overlay.
+- A **F2-admin tenant lifecycle FSM** with a blocking DPA + region-pin
+  gate before any recording-pipeline mutation.
+- A **real OAuth 2.0 + JWKS-verifying federated login** (Google +
+  Microsoft) using `jose`.
+
+## What this is not
+
+This is a portfolio repository. **Operational concerns** — auditor
+engagement, penetration testing, on-call rotation, customer-onboarding
+collateral — are deliberately out of scope. The technical controls
+that those processes would verify are real and verifiable in code.
+
+## Architecture at a glance
+
+```
+┌─────────────┐    ┌─────────────┐    ┌───────────────┐
+│   apps/web  │    │ apps/mobile │    │ apps/extension│
+│  React 19   │    │   Expo 52   │    │  Chrome MV3   │
+└──────┬──────┘    └──────┬──────┘    └───────┬───────┘
+       └─────────────┬────┴───────────────────┘
+                     │      TLS 1.3
+              ┌──────▼──────┐
+              │   apps/api  │  Fastify 5, Argon2id+MFA TOTP, RLS context
+              └──────┬──────┘
+        ┌────────────┼────────────────────────────┬─────────────────┐
+   ┌────▼────┐  ┌────▼────┐  ┌────────────────────▼──┐  ┌───────────▼───┐
+   │Postgres │  │  Redis  │  │  pg-boss queues       │  │ S3 / MinIO    │
+   │   16    │  │   7     │  │  (same Postgres)      │  │ (recordings)  │
+   │ + RLS   │  │         │  │                       │  │               │
+   │ pgvector│  │         │  └─────┬────────────┬────┘  └───────────────┘
+   └─────────┘  └─────────┘        │            │
+                              ┌────▼─────┐  ┌───▼─────────┐
+                              │apps/     │  │  apps/bot   │
+                              │workers   │  │  Zoom +     │
+                              │transcribe│  │  Teams      │
+                              │+analyze  │  │  media bot  │
+                              │+crm.push │  │             │
+                              └──────────┘  └─────────────┘
+                                     │
+                          ┌──────────┼──────────┬───────────┐
+                     ┌────▼────┐ ┌───▼────┐ ┌───▼────┐ ┌────▼────┐
+                     │ LLM     │ │Trans-  │ │ CRM    │ │Notif    │
+                     │gateway  │ │cription│ │gateway │ │gateway  │
+                     │(Anthr.+ │ │(Whisper│ │(HubSpot│ │(Postmark│
+                     │OpenAI+  │ │+ self- │ │Salesf. │ │SES+Expo)│
+                     │Bedrock+ │ │hosted) │ │Piped.) │ │         │
+                     │Azure)   │ │        │ │        │ │         │
+                     └─────────┘ └────────┘ └────────┘ └─────────┘
+```
+
+Every gateway is isolated in its own workspace package; SDK imports
+live there and only there, enforced by a CI grep gate. Adding a new
+provider is a config + class addition, never a platform deploy.
 
 ## Documentation
 
-- **[Architecture](docs/architecture.md)** — Source of truth for all technical decisions
-- **[Product spec](docs/mini-prd.md)** — Locked-in scope and personas
-- **[Original brief](docs/input-spec.md)** — Initial developer documentation
-- **[ADRs](docs/decisions/)** — Architectural deviation records (use `0001-template.md` for new entries)
-- **[Compliance](docs/compliance/)** — GDPR, HIPAA, audit-evidence templates
-- **[Runbooks](docs/runbook/)** — Ops procedures
-- **[CLAUDE.md](CLAUDE.md)** — Conventions for AI agent contributors
-- **[project-context.md](project-context.md)** — BMAD-format project context
+| Topic | Where |
+|---|---|
+| Source of truth for technical decisions | [`docs/architecture.md`](docs/architecture.md) |
+| Product scope + 8 verticals | [`docs/mini-prd.md`](docs/mini-prd.md) |
+| 6 architecture-deviation ADRs | [`docs/decisions/`](docs/decisions/) |
+| Compliance controls (HIPAA, GDPR, SOC 2) | [`docs/compliance/`](docs/compliance/) |
+| Threat model (STRIDE) | [`docs/compliance/threat-model.md`](docs/compliance/threat-model.md) |
+| DPA template | [`docs/compliance/dpa-template.md`](docs/compliance/dpa-template.md) |
+| Customer-dev research synthesis | [`_bmad-output/research/`](_bmad-output/research/) |
+| Designer brief (empty states + motion + hero) | [`_bmad-output/design/`](_bmad-output/design/) |
+| UX design specification (14-step) | [`_bmad-output/planning-artifacts/ux-design-specification.md`](_bmad-output/planning-artifacts/ux-design-specification.md) |
+| Convention guide for AI contributors | [`CLAUDE.md`](CLAUDE.md) |
 
-## Tech stack (summary)
+## Tech stack
 
-- **Backend:** Node.js 22 + Fastify 5 + TypeScript + Drizzle + PostgreSQL 16 + pgvector + pg-boss + Redis
-- **Web:** React 19 + Vite + shadcn/ui + TanStack Router + React Query + Zustand
-- **Mobile:** Expo SDK 52+ (React Native) + Expo Router
-- **AI:** Multi-provider LLM gateway (Anthropic + OpenAI ZDR + Azure OpenAI + Ollama); Whisper API + faster-whisper transcription
-- **Infrastructure:** Railway (US + EU regions); Docker artifacts portable to customer-cloud / on-prem
+| Layer | Choice |
+|---|---|
+| Runtime | Node.js 22 LTS, TypeScript 5.6 strict, ESM |
+| API | Fastify 5 + zod 3 + drizzle-orm |
+| DB | PostgreSQL 16 + pgvector (HNSW) + RLS |
+| Queue | pg-boss (Postgres-native, same DB as data) |
+| Auth | Argon2id passwords + JWT HS256 + MFA TOTP + OAuth 2.0 (Google + Microsoft) |
+| Web | React 19 + Vite 6 + shadcn/ui + Tailwind + TanStack Router + React Query + Zustand |
+| Mobile | Expo SDK 52 + React Native + Expo Router |
+| Extension | Chrome Manifest V3 (vanilla TS — no bundler dependency) |
+| LLM | Anthropic + OpenAI + Azure OpenAI + AWS Bedrock + Ollama (per-tenant compliance routing) |
+| Transcription | OpenAI Whisper API + self-hosted faster-whisper |
+| Storage | S3 + Azure Blob + GCS + MinIO (provider abstraction) |
+| Email | Postmark + AWS SES + SMTP (provider abstraction) |
+| Push | Expo + FCM |
+| CRM | HubSpot + Salesforce + Pipedrive (provider abstraction) |
+| Hosting | Railway (US + EU regions) |
+| Observability | pino → Grafana Cloud (Loki + Tempo + Mimir) + Sentry + PostHog |
+| Tooling | pnpm workspaces, Biome (lint + format), Vitest, Playwright, GitHub Actions |
 
 ## Repository layout
 
 ```
 ai-secretary/
 ├── apps/
-│   ├── api/           # Fastify control + data plane
-│   ├── workers/       # pg-boss workers (transcription, summarization, analysis, ...)
-│   ├── bot/           # Zoom + Teams meeting-bot worker
-│   ├── web/           # React 19 + Vite + shadcn (PWA)
-│   ├── mobile/        # Expo (React Native)
+│   ├── api/           # Fastify HTTP server (control + data plane)
+│   ├── bot/           # Zoom + Teams meeting-bot worker (pg-boss `bot.join`)
+│   ├── workers/       # pg-boss workers (transcribe, summarize, extract-action-items,
+│   │                  #                   dsar.export, crm.push, recording-watchdog, ...)
+│   ├── web/           # React 19 + Vite SPA
+│   ├── mobile/        # Expo / React Native
+│   ├── extension/     # Chrome Manifest V3 (HubSpot / Salesforce / Pipedrive overlay)
 │   └── admin/         # Internal admin console
 ├── packages/
-│   ├── shared/        # zod schemas, types
-│   ├── llm-gateway/   # Multi-provider LLM abstraction
-│   ├── transcription/ # Engine abstraction (Whisper API + faster-whisper)
-│   ├── storage/       # S3 / Azure / GCS / MinIO abstraction
-│   ├── db/            # Drizzle schema + migrations + RLS  ← scaffolded
-│   ├── auth/          # Argon2 + JWT + Redis refresh
-│   └── modules/       # 8 vertical analysis configs
-├── infra/             # Railway, Docker, Helm, Terraform
-├── docs/              # Architecture, PRD, ADRs, runbooks, compliance
-├── e2e/               # Playwright cross-app
-└── .github/workflows/ # CI/CD
+│   ├── shared/        # zod wire contracts + helpers
+│   ├── auth/          # Argon2id + JWT + Redis refresh-token store
+│   ├── bot/           # Bot provider abstraction (Zoom + Teams + Mock)
+│   ├── consent/       # Per-participant consent FSM + region detection
+│   ├── crm/           # CRM gateway (HubSpot + Salesforce + Pipedrive + Mock)
+│   ├── db/            # Drizzle schema + migrations + RLS + envelope encryption
+│   ├── design-tokens/ # Style Dictionary tokens → CSS / Tailwind / RN
+│   ├── llm-gateway/   # LLM gateway (Anthropic + OpenAI + Azure + Bedrock + Ollama + Mock)
+│   ├── modules/       # 8 vertical analysis configs
+│   ├── notifications/ # Email + push gateway (Postmark + SES + SMTP + Expo)
+│   ├── storage/       # S3 + Azure + GCS + MinIO abstraction
+│   └── transcription/ # Whisper API + faster-whisper abstraction
+├── infra/
+│   ├── docker/        # Per-app Dockerfiles + docker-compose.local.yml + Caddyfile
+│   └── railway/       # Service definitions + region setup notes
+├── docs/
+│   ├── architecture.md  # Source of truth
+│   ├── mini-prd.md      # Product spec
+│   ├── decisions/       # 6 ADRs
+│   ├── compliance/      # HIPAA + GDPR + SOC 2 + threat model + DPA template
+│   └── runbook/         # Ops procedures
+├── _bmad-output/
+│   ├── planning-artifacts/  # UX spec, epics, readiness reports
+│   ├── research/            # Customer-dev synthesis (5 personas)
+│   └── design/              # Empty-state + motion + hero asset briefs
+├── e2e/                     # Playwright cross-app golden paths
+└── .github/workflows/       # Typecheck + lint + tests + provider-isolation gates
 ```
 
-## Getting started
+## Local development
 
-> ⚠️ This is a freshly scaffolded repo. Most apps and packages are folder placeholders until their first implementation story. Currently scaffolded: **workspace tooling** + **`packages/db`** (schema for tenants/users/meetings + RLS + tenant-context helper).
-
-### Prerequisites
-
-- Node 22 LTS (`nvm install 22`)
-- pnpm 9+ (`corepack enable && corepack prepare pnpm@9.12.0 --activate`)
-- Docker (for local Postgres + Redis + MinIO + Ollama)
-
-### First-time setup
+### Quick start (no cloud accounts)
 
 ```bash
-pnpm install
-cp .env.example .env  # fill in secrets
-pnpm typecheck        # should pass on bare scaffold
+# 1. Boot the local stack (Postgres + Redis + MinIO).
+docker compose -f infra/docker/docker-compose.local.yml up -d
+
+# 2. Install workspace deps.
+corepack enable && pnpm install
+
+# 3. Build design tokens (apps/web's Tailwind theme depends on the artifact).
+pnpm --filter @aisecretary/design-tokens build
+
+# 4. Run the workspace gates.
+pnpm typecheck
+pnpm lint
+pnpm test
+
+# 5. Boot a dev API.
+DATABASE_URL=postgres://aisecretary:aisecretary@localhost:5432/aisecretary \
+REDIS_URL=redis://localhost:6379 \
+S3_ENDPOINT=http://localhost:9000 S3_BUCKET=recordings S3_FORCE_PATH_STYLE=true \
+AWS_ACCESS_KEY_ID=aisecretary AWS_SECRET_ACCESS_KEY=aisecretary \
+pnpm --filter @aisecretary/api dev
 ```
 
-### Implementation order (per architecture)
+### Test suite
 
-1. ✅ Workspace skeleton (root tooling)
-2. ✅ `packages/db` skeleton — schema for `tenants`, `users`, `meetings` + RLS + tenant context
-3. ⬜ `packages/db` — remaining schemas (recordings, transcripts, summaries, analyses, shares, audit_logs, consents, tenant_entitlements, retention_policies)
-4. ⬜ `packages/auth` — Argon2 + JWT + Redis refresh
-5. ⬜ `packages/storage` — S3 abstraction
-6. ⬜ `packages/llm-gateway` — Anthropic provider first
-7. ⬜ `apps/api` — Fastify boot + plugin stack + healthcheck
-8. ⬜ `apps/workers` — pg-boss boot + transcription handler
-9. ⬜ First end-to-end journey: J2 (upload existing audio → transcript → summary)
+```bash
+pnpm test                                       # 1700+ tests across all packages
+pnpm --filter @aisecretary/api test             # one package
+pnpm --filter @aisecretary/api test -- --run crm  # one file
+```
 
-Then expand outward.
+### Provider-isolation gates
+
+```bash
+pnpm --filter @aisecretary/llm-gateway check:isolation
+pnpm --filter @aisecretary/transcription check:isolation
+pnpm --filter @aisecretary/notifications check:isolation
+pnpm --filter @aisecretary/crm check:isolation
+pnpm --filter @aisecretary/bot check:isolation
+```
+
+### E2E
+
+```bash
+pnpm --filter @aisecretary/e2e test
+```
+
+## Deployment
+
+The repository ships Railway-ready Dockerfiles for `api`, `bot`,
+`workers`, and `web`. See [`infra/railway/services.json`](infra/railway/services.json)
+for the full per-service env-var matrix.
+
+```bash
+docker build -f infra/docker/api.Dockerfile     -t aisecretary/api .
+docker build -f infra/docker/bot.Dockerfile     -t aisecretary/bot .
+docker build -f infra/docker/workers.Dockerfile -t aisecretary/workers .
+docker build -f infra/docker/web.Dockerfile     -t aisecretary/web .
+```
+
+Per-service env contract: [`infra/railway/README.md`](infra/railway/README.md).
+
+## Key design decisions
+
+Every architectural deviation from the locked architecture document is
+recorded as an ADR in [`docs/decisions/`](docs/decisions/):
+
+| ADR | Topic | Status |
+|---|---|---|
+| 0002 | Style Dictionary as token build pipeline | ACCEPTED |
+| 0003 | Server-side CRM gateway; Chrome extension is presentation only | PROPOSED (impl shipped) |
+| 0004 | Tenant lifecycle FSM + blocking DPA / region pin | PROPOSED (partial impl) |
+| 0005 | Per-participant consent model with diarization-aware exclusion | ACCEPTED |
+| 0006 | Cross-tenant audit writes via tenant-scoped `inbound_shares` table | ACCEPTED |
+
+## Compliance posture matrix
+
+| Tenant type | LLM | Transcription | Storage | Push |
+|---|---|---|---|---|
+| US default | Anthropic direct | OpenAI Whisper | S3 us-east-1 | Expo push |
+| HIPAA (US) | Anthropic via AWS Bedrock | self-hosted faster-whisper / Azure Speech | S3 us-east-1 (BAA) | (disabled) |
+| EU default | Anthropic via Bedrock EU | self-hosted faster-whisper EU / Azure Speech EU | S3 eu-west-1 | Expo push |
+| EU + medical | Bedrock EU | Azure Speech HIPAA + EU | S3 eu-west-1 (BAA + SCC) | (disabled) |
+
+Routing is enforced in code:
+[`packages/llm-gateway/src/selector.ts`](packages/llm-gateway/src/selector.ts)
++ [`packages/transcription/src/selector.ts`](packages/transcription/src/selector.ts).
 
 ## License
 
-UNLICENSED (private, all rights reserved). License decision pending.
+MIT — see [LICENSE](LICENSE).
+
+This repository is a portfolio project by Anthony, hosted as part of
+his University of Washington MSIM portfolio. It is not an active
+commercial product.

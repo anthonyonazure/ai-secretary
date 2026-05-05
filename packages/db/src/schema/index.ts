@@ -20,3 +20,4 @@ export * from './inbound-shares.js';
 export * from './auth-identities.js';
 export * from './embeddings.js';
 export * from './bot-sessions.js';
+export * from './tenant-integrations.js';
