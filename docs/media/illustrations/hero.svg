@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">AI Secretary — Meeting intelligence, calmly delivered</title>
+  <desc id="desc">A wide marketing composition: an open notebook with a structured page, a closed companion notebook, a mug, and a pencil — the workspace where meetings become decisions.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fafafa"/>
+      <stop offset="100%" stop-color="#f4f4f5"/>
+    </linearGradient>
+    <linearGradient id="bg-dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b0b0d"/>
+      <stop offset="100%" stop-color="#15151a"/>
+    </linearGradient>
+  </defs>
+  <style>
+    .ink     { stroke:#09090b; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .ink-soft{ stroke:#09090b; fill:none; stroke-width:1.5; stroke-linecap:round; opacity:.6; }
+    .paper   { fill:#ffffff; stroke:#09090b; stroke-width:2; }
+    .paper-soft{ fill:#ffffff; stroke:#09090b; stroke-width:1.5; opacity:.85; }
+    .accent  { fill:#4f46e5; }
+    .accent-line{ stroke:#4f46e5; fill:none; stroke-width:2.4; stroke-linecap:round; }
+    .muted   { fill:#6e6e76; opacity:.16; }
+    .text    { fill:#09090b; font-family:ui-sans-serif,-apple-system,system-ui,sans-serif; }
+    .text-muted{ fill:#6e6e76; font-family:ui-sans-serif,-apple-system,system-ui,sans-serif; }
+    .bg-rect { fill:url(#bg); }
+    @media (prefers-color-scheme: dark) {
+      .ink     { stroke:#fafafa; }
+      .ink-soft{ stroke:#fafafa; opacity:.55; }
+      .paper   { fill:#15151a; stroke:#fafafa; }
+      .paper-soft{ fill:#15151a; stroke:#fafafa; opacity:.8; }
+      .accent  { fill:#818cf8; }
+      .accent-line{ stroke:#818cf8; }
+      .muted   { fill:#a0a0ab; opacity:.18; }
+      .text    { fill:#fafafa; }
+      .text-muted{ fill:#a0a0ab; }
+      .bg-rect { fill:url(#bg-dark); }
+    }
+  </style>
+
+  <rect class="bg-rect" width="1200" height="720"/>
+
+  <!-- Headline copy aligned LEFT (the typography establishes restraint) -->
+  <g transform="translate(80 180)">
+    <text class="text" x="0" y="0" font-size="58" font-weight="600" letter-spacing="-1.5">Meetings, handled.</text>
+    <text class="text-muted" x="0" y="58" font-size="22" font-weight="400" letter-spacing="-0.2">
+      <tspan x="0" dy="0">Capture, transcribe, and act on every meeting —</tspan>
+      <tspan x="0" dy="32">in person, on Zoom, in Teams.</tspan>
+    </text>
+    <!-- subtle indigo rule under the kicker — same accent vocabulary as the empty states -->
+    <line class="accent-line" x1="0" y1="-46" x2="56" y2="-46"/>
+    <text class="text" x="0" y="-22" font-size="13" font-weight="500" letter-spacing="2" opacity=".75">AI SECRETARY</text>
+  </g>
+
+  <!-- Right-side composition: open notebook + closed companion + mug + pencil. -->
+  <!-- shadow for the whole grouping -->
+  <ellipse class="muted" cx="900" cy="592" rx="280" ry="14"/>
+
+  <!-- Open notebook (right of center, dominant) -->
+  <g transform="translate(700 320)">
+    <!-- left page -->
+    <path class="paper" d="M0 0 L160 -8 L160 200 L0 208 Z"/>
+    <!-- right page (slightly raised at the spine) -->
+    <path class="paper" d="M160 -8 L320 0 L320 208 L160 200 Z"/>
+    <!-- spine shadow -->
+    <line class="ink-soft" x1="160" y1="-8" x2="160" y2="200"/>
+    <!-- left page content: section header + 3 lines + 1 emphasized -->
+    <line class="ink" x1="20" y1="32" x2="118" y2="28" opacity=".75"/>
+    <line class="ink-soft" x1="20" y1="56" x2="138" y2="54"/>
+    <line class="ink-soft" x1="20" y1="76" x2="124" y2="74"/>
+    <line class="ink-soft" x1="20" y1="96" x2="146" y2="94"/>
+    <!-- "decision" callout — single indigo accent square -->
+    <rect class="accent" x="20" y="124" width="6" height="40"/>
+    <line class="ink" x1="36" y1="138" x2="138" y2="136" opacity=".85"/>
+    <line class="ink-soft" x1="36" y1="156" x2="118" y2="155"/>
+    <!-- right page: action items rendered as 3 unchecked + 1 checked rows -->
+    <g transform="translate(176 30)">
+      <!-- row 1 -->
+      <rect class="paper-soft" x="0" y="0" width="12" height="12" rx="2"/>
+      <line class="ink-soft" x1="22" y1="6" x2="118" y2="5"/>
+      <!-- row 2 (checked, indigo) -->
+      <rect class="accent" x="0" y="22" width="12" height="12" rx="2"/>
+      <path d="M2 28 L5 31 L10 24" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <line class="ink-soft" x1="22" y1="28" x2="124" y2="27" opacity=".5"/>
+      <!-- row 3 -->
+      <rect class="paper-soft" x="0" y="44" width="12" height="12" rx="2"/>
+      <line class="ink-soft" x1="22" y1="50" x2="108" y2="49"/>
+      <!-- row 4 -->
+      <rect class="paper-soft" x="0" y="66" width="12" height="12" rx="2"/>
+      <line class="ink-soft" x1="22" y1="72" x2="132" y2="71"/>
+      <!-- row 5 -->
+      <rect class="paper-soft" x="0" y="88" width="12" height="12" rx="2"/>
+      <line class="ink-soft" x1="22" y1="94" x2="100" y2="93"/>
+      <!-- footer caption -->
+      <line class="ink-soft" x1="0" y1="146" x2="80" y2="145" opacity=".4"/>
+    </g>
+  </g>
+
+  <!-- Closed companion notebook tucked behind/right -->
+  <g transform="translate(1020 350)">
+    <rect class="paper" x="0" y="0" width="60" height="180" rx="2"/>
+    <!-- spine -->
+    <line class="ink" x1="8" y1="0" x2="8" y2="180" opacity=".6"/>
+    <!-- ribbon accent -->
+    <rect class="accent" x="38" y="0" width="4" height="34"/>
+    <polygon class="accent" points="38,34 42,34 40,38"/>
+  </g>
+
+  <!-- Mug (bottom-left of the composition) -->
+  <g transform="translate(620 482)">
+    <path class="paper" d="M0 0 L0 60 Q0 72 12 72 L52 72 Q64 72 64 60 L64 0 Z"/>
+    <line class="ink" x1="0" y1="10" x2="64" y2="10"/>
+    <path class="ink" d="M64 18 Q86 22 86 38 Q86 54 64 56"/>
+  </g>
+
+  <!-- Pencil resting in front of the open notebook -->
+  <g transform="translate(680 564)">
+    <line class="ink" x1="0" y1="0" x2="180" y2="-2" stroke-width="2.6"/>
+    <line class="ink" x1="148" y1="-3" x2="148" y2="3"/>
+    <line class="ink" x1="156" y1="-3" x2="156" y2="3"/>
+    <polygon points="180,-3 192,-2 180,3" fill="#09090b"/>
+  </g>
+</svg>

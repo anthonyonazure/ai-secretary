@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">All actions clear</title>
+  <desc id="desc">Two squared-up papers with a single indigo edge stripe — your queue is current.</desc>
+  <style>
+    .ink   { stroke:#09090b; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+    .paper { fill:#ffffff; stroke:#09090b; stroke-width:1.6; }
+    .muted { fill:#6e6e76; opacity:.14; }
+    .accent{ fill:#4f46e5; }
+    .table { stroke:#e6e6ea; stroke-width:1.5; }
+    @media (prefers-color-scheme: dark) {
+      .ink   { stroke:#fafafa; }
+      .paper { fill:#15151a; stroke:#fafafa; }
+      .muted { fill:#a0a0ab; opacity:.18; }
+      .accent{ fill:#818cf8; }
+      .table { stroke:#27272a; }
+    }
+  </style>
+
+  <!-- table edge — single horizontal rule -->
+  <line class="table" x1="20" y1="180" x2="300" y2="180"/>
+
+  <!-- shadow -->
+  <ellipse class="muted" cx="160" cy="184" rx="86" ry="5"/>
+
+  <!-- back paper, offset slightly behind -->
+  <g transform="translate(112 92)">
+    <rect class="paper" x="0" y="0" width="98" height="84" rx="1.5"/>
+    <!-- subtle horizontal lines suggest content without showing it -->
+    <line class="ink" x1="14" y1="22" x2="60" y2="22" opacity=".28"/>
+    <line class="ink" x1="14" y1="34" x2="78" y2="34" opacity=".28"/>
+    <line class="ink" x1="14" y1="46" x2="50" y2="46" opacity=".28"/>
+  </g>
+
+  <!-- front paper, perfectly aligned, with indigo edge stripe -->
+  <g transform="translate(98 80)">
+    <rect class="paper" x="0" y="0" width="106" height="92" rx="1.5"/>
+    <!-- single indigo edge stripe along the left edge -->
+    <rect class="accent" x="0" y="0" width="3" height="92"/>
+    <!-- crisp lines -->
+    <line class="ink" x1="14" y1="20" x2="92" y2="20"/>
+    <line class="ink" x1="14" y1="34" x2="84" y2="34"/>
+    <line class="ink" x1="14" y1="48" x2="74" y2="48"/>
+    <line class="ink" x1="14" y1="62" x2="86" y2="62"/>
+    <line class="ink" x1="14" y1="76" x2="58" y2="76"/>
+  </g>
+</svg>

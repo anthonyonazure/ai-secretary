@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">Empty inbox</title>
+  <desc id="desc">A closed notebook with an indigo ribbon, a small mug, and a mechanical pencil — your meetings will land here.</desc>
+  <style>
+    .ink   { stroke:#09090b; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+    .paper { fill:#ffffff; stroke:#09090b; stroke-width:1.6; }
+    .muted { fill:#6e6e76; opacity:.18; }
+    .accent{ fill:#4f46e5; }
+    @media (prefers-color-scheme: dark) {
+      .ink   { stroke:#fafafa; }
+      .paper { fill:#15151a; stroke:#fafafa; }
+      .muted { fill:#a0a0ab; opacity:.22; }
+      .accent{ fill:#818cf8; }
+    }
+  </style>
+
+  <!-- soft surface shadow under the composition -->
+  <ellipse class="muted" cx="160" cy="200" rx="110" ry="9"/>
+
+  <!-- notebook (closed, slight oblique) -->
+  <g transform="translate(70 90)">
+    <!-- back cover edge -->
+    <path class="paper" d="M0 22 L4 18 L168 18 L172 22 L172 96 L0 96 Z"/>
+    <!-- front cover -->
+    <rect class="paper" x="0" y="22" width="172" height="74" rx="2"/>
+    <!-- spine -->
+    <line class="ink" x1="14" y1="24" x2="14" y2="94"/>
+    <!-- corner highlights -->
+    <line class="ink" x1="0" y1="22" x2="172" y2="22"/>
+    <line class="ink" x1="0" y1="96" x2="172" y2="96"/>
+    <!-- ribbon mark — indigo accent, slightly past one-third from top -->
+    <rect class="accent" x="118" y="22" width="6" height="44"/>
+    <polygon class="accent" points="118,66 124,66 121,72"/>
+  </g>
+
+  <!-- mug -->
+  <g transform="translate(218 132)">
+    <path class="paper" d="M0 0 L0 38 Q0 46 8 46 L34 46 Q42 46 42 38 L42 0 Z"/>
+    <path class="ink" d="M0 0 L0 38 Q0 46 8 46 L34 46 Q42 46 42 38 L42 0"/>
+    <line class="ink" x1="0" y1="6" x2="42" y2="6"/>
+    <!-- handle -->
+    <path class="ink" d="M42 12 Q56 14 56 24 Q56 34 42 36"/>
+  </g>
+
+  <!-- mechanical pencil resting beside the notebook -->
+  <g transform="translate(60 184)">
+    <line class="ink" x1="0" y1="0" x2="120" y2="0" stroke-width="2.2"/>
+    <!-- ferrule -->
+    <line class="ink" x1="98" y1="-2" x2="98" y2="2"/>
+    <line class="ink" x1="104" y1="-2" x2="104" y2="2"/>
+    <!-- tip -->
+    <polygon points="120,-2 128,0 120,2" fill="#09090b" class="ink"/>
+  </g>
+</svg>

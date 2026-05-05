@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">No results</title>
+  <desc id="desc">A magnifying glass set down on a flat surface — we looked, it's not here, that's a complete answer.</desc>
+  <style>
+    .ink   { stroke:#09090b; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; opacity:.9; }
+    .lens-fill { fill:#fafafa; }
+    .accent{ stroke:#4f46e5; fill:none; stroke-width:1.7; stroke-linecap:round; }
+    .table { stroke:#e6e6ea; stroke-width:1.5; }
+    @media (prefers-color-scheme: dark) {
+      .ink   { stroke:#fafafa; }
+      .lens-fill { fill:#0b0b0d; }
+      .accent{ stroke:#818cf8; }
+      .table { stroke:#27272a; }
+    }
+  </style>
+
+  <!-- horizontal table line -->
+  <line class="table" x1="30" y1="172" x2="290" y2="172"/>
+
+  <!-- magnifying glass — positioned LEFT-of-center, lens flat, handle to the right -->
+  <g transform="translate(112 132) rotate(-18)">
+    <!-- handle -->
+    <rect class="ink" x="44" y="-3" width="62" height="6" rx="3" fill="none" />
+    <!-- ferrule joint between handle and lens -->
+    <line class="ink" x1="44" y1="-3" x2="44" y2="3"/>
+    <!-- lens — transparent interior so the surface reads through -->
+    <circle class="lens-fill" cx="0" cy="0" r="32"/>
+    <circle class="ink" cx="0" cy="0" r="32"/>
+    <!-- inner rim, half the line weight, suggesting glass thickness -->
+    <circle class="ink" cx="0" cy="0" r="27" opacity=".35"/>
+    <!-- single indigo highlight on the rim — the only accent in the piece -->
+    <path class="accent" d="M -22 -22 A 32 32 0 0 1 8 -32"/>
+  </g>
+</svg>

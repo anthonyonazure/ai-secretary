@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" role="img" aria-labelledby="title">
+  <title id="title">AI Secretary</title>
+  <style>
+    .ink   { stroke:#09090b; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .paper { fill:#ffffff; stroke:#09090b; stroke-width:2; }
+    .accent{ fill:#4f46e5; }
+    .word  { fill:#09090b; font-family:ui-sans-serif,-apple-system,system-ui,sans-serif; font-weight:600; letter-spacing:-0.6; }
+    @media (prefers-color-scheme: dark) {
+      .ink   { stroke:#fafafa; }
+      .paper { fill:#15151a; stroke:#fafafa; }
+      .accent{ fill:#818cf8; }
+      .word  { fill:#fafafa; }
+    }
+  </style>
+
+  <!-- mark: closed notebook with indigo ribbon — same vocabulary as the inbox empty state -->
+  <g transform="translate(8 8)">
+    <rect class="paper" x="0" y="0" width="40" height="48" rx="2"/>
+    <line class="ink" x1="6" y1="0" x2="6" y2="48" opacity=".55"/>
+    <rect class="accent" x="28" y="0" width="4" height="22"/>
+    <polygon class="accent" points="28,22 32,22 30,26"/>
+  </g>
+
+  <!-- wordmark -->
+  <text class="word" x="64" y="40" font-size="22">AI Secretary</text>
+</svg>

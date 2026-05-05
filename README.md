@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/media/illustrations/hero.svg" alt="AI Secretary — meeting intelligence + decision platform" width="100%">
+</p>
+
 # AI Secretary
 
 > Meeting Intelligence & Decision Platform. Captures meetings (in-person via mobile/web, online via Zoom/Teams bots), transcribes them, runs vertical-specific AI analysis (sales, HR, education, medical, support, PM, psychology, general), and exposes everything through a searchable, RAG-chattable knowledge base. Multi-tenant SaaS with HIPAA + GDPR + SOC 2 controls baked into the architecture.
@@ -44,45 +48,58 @@ that those processes would verify are real and verifiable in code.
 
 ## Architecture at a glance
 
-```
-┌─────────────┐    ┌─────────────┐    ┌───────────────┐
-│   apps/web  │    │ apps/mobile │    │ apps/extension│
-│  React 19   │    │   Expo 52   │    │  Chrome MV3   │
-└──────┬──────┘    └──────┬──────┘    └───────┬───────┘
-       └─────────────┬────┴───────────────────┘
-                     │      TLS 1.3
-              ┌──────▼──────┐
-              │   apps/api  │  Fastify 5, Argon2id+MFA TOTP, RLS context
-              └──────┬──────┘
-        ┌────────────┼────────────────────────────┬─────────────────┐
-   ┌────▼────┐  ┌────▼────┐  ┌────────────────────▼──┐  ┌───────────▼───┐
-   │Postgres │  │  Redis  │  │  pg-boss queues       │  │ S3 / MinIO    │
-   │   16    │  │   7     │  │  (same Postgres)      │  │ (recordings)  │
-   │ + RLS   │  │         │  │                       │  │               │
-   │ pgvector│  │         │  └─────┬────────────┬────┘  └───────────────┘
-   └─────────┘  └─────────┘        │            │
-                              ┌────▼─────┐  ┌───▼─────────┐
-                              │apps/     │  │  apps/bot   │
-                              │workers   │  │  Zoom +     │
-                              │transcribe│  │  Teams      │
-                              │+analyze  │  │  media bot  │
-                              │+crm.push │  │             │
-                              └──────────┘  └─────────────┘
-                                     │
-                          ┌──────────┼──────────┬───────────┐
-                     ┌────▼────┐ ┌───▼────┐ ┌───▼────┐ ┌────▼────┐
-                     │ LLM     │ │Trans-  │ │ CRM    │ │Notif    │
-                     │gateway  │ │cription│ │gateway │ │gateway  │
-                     │(Anthr.+ │ │(Whisper│ │(HubSpot│ │(Postmark│
-                     │OpenAI+  │ │+ self- │ │Salesf. │ │SES+Expo)│
-                     │Bedrock+ │ │hosted) │ │Piped.) │ │         │
-                     │Azure)   │ │        │ │        │ │         │
-                     └─────────┘ └────────┘ └────────┘ └─────────┘
+```mermaid
+flowchart TB
+    classDef client fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#1e1b4b
+    classDef edge   fill:#fafafa,stroke:#09090b,stroke-width:1.5px,color:#09090b
+    classDef store  fill:#fef3c7,stroke:#a16207,stroke-width:1.5px,color:#451a03
+    classDef worker fill:#fff,stroke:#09090b,stroke-width:1.5px,color:#09090b
+    classDef gateway fill:#ede9fe,stroke:#6d28d9,stroke-width:1.5px,color:#3b0764
+
+    Web[apps/web<br/>React 19 + Vite]:::client
+    Mobile[apps/mobile<br/>Expo 52]:::client
+    Ext[apps/extension<br/>Chrome MV3]:::client
+
+    API[apps/api<br/>Fastify 5<br/>Argon2id + JWT + RLS context]:::edge
+
+    PG[(Postgres 16<br/>+ pgvector + RLS)]:::store
+    Redis[(Redis 7<br/>refresh tokens<br/>heartbeat keys)]:::store
+    PgBoss[/pg-boss queues<br/>same Postgres/]:::store
+    S3[(S3 / MinIO<br/>recordings + DSAR)]:::store
+
+    Workers[apps/workers<br/>transcribe + summarize<br/>+ extract-action-items<br/>+ dsar.export + crm.push]:::worker
+    Bot[apps/bot<br/>Zoom + Teams<br/>media bot]:::worker
+
+    LLM[packages/llm-gateway<br/>Anthropic + OpenAI<br/>+ Azure + Bedrock + Ollama]:::gateway
+    TR[packages/transcription<br/>Whisper API<br/>+ self-hosted faster-whisper]:::gateway
+    CRM[packages/crm<br/>HubSpot + Salesforce<br/>+ Pipedrive]:::gateway
+    NOTIF[packages/notifications<br/>Postmark + SES + Expo]:::gateway
+
+    Web -.TLS 1.3.-> API
+    Mobile -.TLS 1.3.-> API
+    Ext -.TLS 1.3.-> API
+
+    API --> PG
+    API --> Redis
+    API --> PgBoss
+    API --> S3
+
+    PgBoss --> Workers
+    PgBoss --> Bot
+
+    Workers --> LLM
+    Workers --> TR
+    Workers --> CRM
+    Workers --> NOTIF
+    Bot --> S3
 ```
 
 Every gateway is isolated in its own workspace package; SDK imports
 live there and only there, enforced by a CI grep gate. Adding a new
 provider is a config + class addition, never a platform deploy.
+
+More diagrams (sequence, FSMs, multi-tenant isolation, compliance
+posture routing): [`docs/media/diagrams/architecture.md`](docs/media/diagrams/architecture.md).
 
 ## Documentation
 
