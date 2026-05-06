@@ -6,7 +6,7 @@ import { RelationshipBrowser } from './relationship-browser';
 
 const facets = {
   people: [
-    { id: 'p1', label: 'Anthony Clendenen', count: 12 },
+    { id: 'p1', label: 'Sample Person', count: 12 },
     { id: 'p2', label: 'Casey Lee', count: 7 },
   ],
   calendars: [{ id: 'cal-google', label: 'Google Workspace', count: 18 }],
@@ -20,7 +20,7 @@ describe('RelationshipBrowser', () => {
   it('renders the People tab by default with the count chip', () => {
     render(<RelationshipBrowser facets={facets} onFilter={() => {}} />);
     expect(screen.getByTestId('relationship-tab-people')).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByTestId('relationship-people-p1').textContent).toContain('Anthony Clendenen');
+    expect(screen.getByTestId('relationship-people-p1').textContent).toContain('Sample Person');
   });
 
   it('switches tabs on click', async () => {

@@ -23,7 +23,7 @@ type Story = StoryObj<typeof RelationshipBrowser>;
 
 const populatedFacets = {
   people: [
-    { id: 'p1', label: 'Anthony Clendenen', count: 12 },
+    { id: 'p1', label: 'Sample Person', count: 12 },
     { id: 'p2', label: 'Casey Lee', count: 7 },
     { id: 'p3', label: 'Sam Rivera', count: 4 },
   ],
