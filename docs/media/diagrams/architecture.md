@@ -32,9 +32,9 @@ flowchart TB
     CRM[packages/crm<br/>HubSpot + Salesforce<br/>+ Pipedrive]:::gateway
     NOTIF[packages/notifications<br/>Postmark + SES + Expo]:::gateway
 
-    Web -.TLS 1.3.-> API
-    Mobile -.TLS 1.3.-> API
-    Ext -.TLS 1.3.-> API
+    Web -.->|TLS 1.3| API
+    Mobile -.->|TLS 1.3| API
+    Ext -.->|TLS 1.3| API
 
     API --> PG
     API --> Redis
