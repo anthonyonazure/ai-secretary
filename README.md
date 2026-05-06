@@ -6,7 +6,7 @@
 
 > Meeting Intelligence & Decision Platform. Captures meetings (in-person via mobile/web, online via Zoom/Teams bots), transcribes them, runs vertical-specific AI analysis (sales, HR, education, medical, support, PM, psychology, general), and exposes everything through a searchable, RAG-chattable knowledge base. Multi-tenant SaaS with HIPAA + GDPR + SOC 2 controls baked into the architecture.
 
-![tests](https://img.shields.io/badge/tests-1700%2B%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-1%2C715%20passing-brightgreen)
 ![packages](https://img.shields.io/badge/packages-19-blue)
 ![compliance](https://img.shields.io/badge/compliance-HIPAA%20%7C%20GDPR%20%7C%20SOC%202-purple)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -18,7 +18,7 @@ platform. The codebase ships:
 
 - A locked **architecture contract** with 6 ADRs — every architectural
   deviation recorded.
-- **1700+ automated tests** across 19 packages — every state-changing
+- **1,715 automated tests** across 19 packages — every state-changing
   route, every queue handler, every provider abstraction.
 - **Provider-isolation CI gates** that prevent SDK leakage across the
   monorepo (LLM SDKs only inside `packages/llm-gateway`, CRM SDKs only
@@ -211,7 +211,7 @@ pnpm --filter @aisecretary/api dev
 ### Test suite
 
 ```bash
-pnpm test                                       # 1700+ tests across all packages
+pnpm test                                       # 1,715 tests across all packages
 pnpm --filter @aisecretary/api test             # one package
 pnpm --filter @aisecretary/api test -- --run crm  # one file
 ```

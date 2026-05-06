@@ -50,13 +50,22 @@
       .nav a:hover { color: var(--fg); }
 
       .hero { padding: 72px 0 48px; }
+      .hero-grid {
+        display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        gap: 48px; align-items: center;
+      }
+      .hero-illo { width: 100%; height: auto; max-width: 520px; justify-self: end; }
+      @media (max-width: 880px) {
+        .hero-grid { grid-template-columns: 1fr; gap: 24px; }
+        .hero-illo { max-width: 360px; justify-self: start; }
+      }
       .eyebrow {
         font-size: 12px; letter-spacing: 2.5px; color: var(--accent); font-weight: 600;
         text-transform: uppercase; margin-bottom: 12px; display: inline-flex; align-items: center; gap: 12px;
       }
       .eyebrow::before { content: ""; width: 32px; height: 2px; background: var(--accent); border-radius: 2px; }
       h1 { font-size: 56px; line-height: 1.05; letter-spacing: -1.6px; margin: 0 0 18px; font-weight: 600; }
-      .lede { font-size: 20px; color: var(--muted); max-width: 720px; margin: 0; }
+      .lede { font-size: 20px; color: var(--muted); max-width: 560px; margin: 0; }
       .cta-row { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
       .btn {
         display: inline-flex; align-items: center; gap: 8px;
@@ -145,20 +154,23 @@
 
     <main>
       <section class="hero">
-        <div class="container">
-          <div class="eyebrow">Portfolio project · UW MSIM</div>
-          <h1>Meetings, handled.</h1>
-          <p class="lede">
-            Multi-tenant SaaS reference implementation. Capture meetings via mobile, web,
-            Zoom-bot, or Teams-bot. Transcribe, analyze through one of eight vertical
-            modules, and surface decisions through a searchable, RAG-chattable knowledge
-            base — with HIPAA + GDPR + SOC 2 controls baked into the data plane.
-          </p>
-          <div class="cta-row">
-            <a class="btn btn-primary" href="https://github.com/anthonyonazure/ai-secretary" target="_blank" rel="noopener">View on GitHub →</a>
-            <a class="btn" href="../diagrams/architecture.md">Architecture diagrams</a>
-            <a class="btn" href="../../compliance/">Compliance docs</a>
+        <div class="container hero-grid">
+          <div>
+            <div class="eyebrow">Portfolio project · UW MSIM</div>
+            <h1>Meetings, handled.</h1>
+            <p class="lede">
+              Capture, transcribe, and act on every meeting — in person, on Zoom,
+              in Teams. A multi-tenant SaaS reference implementation with eight
+              vertical analysis modules and HIPAA + GDPR + SOC 2 controls in
+              the data plane.
+            </p>
+            <div class="cta-row">
+              <a class="btn btn-primary" href="https://github.com/anthonyonazure/ai-secretary" target="_blank" rel="noopener">View on GitHub →</a>
+              <a class="btn" href="https://github.com/anthonyonazure/ai-secretary/blob/main/docs/media/diagrams/architecture.md" target="_blank" rel="noopener">Architecture diagrams</a>
+              <a class="btn" href="https://github.com/anthonyonazure/ai-secretary/tree/main/docs/compliance" target="_blank" rel="noopener">Compliance docs</a>
+            </div>
           </div>
+          <img class="hero-illo" src="../illustrations/hero-illo.svg" alt="Open notebook with action items, a closed companion notebook, a mug, and a pencil — the workspace where meetings become decisions">
         </div>
       </section>
 
