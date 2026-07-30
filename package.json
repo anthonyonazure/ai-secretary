@@ -13,9 +13,11 @@
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "lint": "biome check .",
+    "test": "pnpm -r --filter=!@aisecretary/e2e test",
+    "mutation": "stryker run",
+    "check": "bun run typecheck && bun run lint",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "test": "pnpm -r --filter=!@aisecretary/e2e test",
     "e2e": "pnpm --filter @aisecretary/e2e test",
     "e2e:install": "pnpm --filter @aisecretary/e2e install-browsers",
     "build": "pnpm -r build",
@@ -24,9 +26,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",
+    "@eslint/js": "^10.0.1",
+    "@stryker-mutator/core": "^9.6.1",
     "@types/node": "^22.0.0",
+    "eslint": "^10.8.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
+    "typescript-eslint": "^8.65.0",
     "vitest": "^2.1.0"
   }
 }

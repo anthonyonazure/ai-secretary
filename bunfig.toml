@@ -1,0 +1,7 @@
+[test]
+# Measured from this repo's own coverage when the gauntlet was armed, minus a
+# 2-point margin for run-to-run noise. Raise it when the suite improves; never
+# lower it. Lowering this line is the only way coverage can regress, which is
+# the point.
+coverage = true
+coverageThreshold = 0.67
