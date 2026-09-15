@@ -1,7 +1,7 @@
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
-import type { UserConfig } from 'vitest/config';
+import type { ViteUserConfig } from 'vitest/config';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -30,7 +30,7 @@ function stubCssImports(): Plugin {
   };
 }
 
-const config: UserConfig = {
+const config: ViteUserConfig = {
   // Cast: vitest bundles an older vite type that doesn't match the
   // vite@6 plugin shape one-to-one. Functionally compatible.
   plugins: [stubCssImports() as unknown as never, react() as unknown as never],
@@ -40,11 +40,21 @@ const config: UserConfig = {
     },
   },
   test: {
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    environmentMatchGlobs: [['**/*.test.tsx', 'jsdom']],
-    environment: 'node',
     globals: false,
     setupFiles: ['./src/test/setup.ts'],
+    // Vitest 4 removed environmentMatchGlobs. The same split is two projects
+    // that inherit everything above (plugins, alias, setup file): component
+    // tests (.test.tsx) get jsdom, pure-logic tests (.test.ts) stay on node.
+    projects: [
+      {
+        extends: true,
+        test: { name: 'node', include: ['src/**/*.test.ts'], environment: 'node' },
+      },
+      {
+        extends: true,
+        test: { name: 'jsdom', include: ['src/**/*.test.tsx'], environment: 'jsdom' },
+      },
+    ],
   },
 };
 

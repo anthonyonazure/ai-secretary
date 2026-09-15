@@ -1,8 +1,7 @@
 /**
  * Vitest setup — registers @testing-library/jest-dom matchers + an
  * explicit cleanup hook for .test.tsx files that run under the jsdom
- * environment (configured in `vitest.config.ts` via
- * `environmentMatchGlobs`).
+ * environment (configured in `vitest.config.ts` as the `jsdom` project).
  *
  * Pure-logic .test.ts files run under `node` and don't need this file.
  */

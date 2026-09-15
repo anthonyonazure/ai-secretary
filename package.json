@@ -33,7 +33,7 @@
     "tsx": "^4.23.13",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.65.0",
-    "vitest": "^2.1.0"
+    "vitest": "^4.1.11"
   },
   "gauntlet": {
     "coverageFloorPercent": 67
@@ -69,5 +69,8 @@
       "ws@>=7.0.0 <7.5.11": "^7.5.11",
       "ws@>=8.0.0 <8.21.0": "^8.21.0"
     }
+  },
+  "overrides": {
+    "qs": "^6.16.0"
   }
 }
