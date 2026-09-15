@@ -1,0 +1,9 @@
+# Reviewed gitleaks findings. One fingerprint per line: commit:file:rule:line.
+# Each entry pins one exact finding in one commit, so a new secret anywhere,
+# including a new one in the same file, still fails the scan.
+#
+# e2e/fixtures/in-memory-stack.ts: a placeholder signing secret handed to the
+# in-memory API that the Playwright suite boots with NODE_ENV=test. It signs
+# tokens for a throwaway server on 127.0.0.1 that exists only for the length of
+# the test run; no deployed environment reads this file.
+42e63b79108bbdf655b36261ab6509cfd44f394d:e2e/fixtures/in-memory-stack.ts:generic-api-key:222
