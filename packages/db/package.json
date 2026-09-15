@@ -20,10 +20,10 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "drizzle-orm": "^0.36.0",
+    "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.0"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.27.0"
+    "drizzle-kit": "^0.31.10"
   }
 }

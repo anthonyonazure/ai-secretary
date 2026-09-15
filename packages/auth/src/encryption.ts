@@ -90,7 +90,9 @@ export const decryptSecret = (payload: EncryptedSecretPayload, key: string): str
   if (authTag.length !== AUTH_TAG_BYTES) {
     throw new Error('encrypted-secret: authTag length invalid');
   }
-  const decipher = createDecipheriv(ALGORITHM, keyBuf, iv);
+  // Pin the tag length so Node rejects a truncated tag inside the cipher
+  // itself, not only in the length check above.
+  const decipher = createDecipheriv(ALGORITHM, keyBuf, iv, { authTagLength: AUTH_TAG_BYTES });
   decipher.setAuthTag(authTag);
   // GCM tag mismatch surfaces as a thrown error from `final()`; let it
   // propagate so callers know the ciphertext was tampered with.

@@ -11,11 +11,13 @@
   },
   "packageManager": "pnpm@9.12.0",
   "scripts": {
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "pnpm --filter @aisecretary/design-tokens build && pnpm -r typecheck",
     "lint": "biome check .",
+    "test": "pnpm -r --filter=!@aisecretary/e2e test",
+    "mutation": "stryker run",
+    "check": "bun run typecheck && bun run lint",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "test": "pnpm -r --filter=!@aisecretary/e2e test",
     "e2e": "pnpm --filter @aisecretary/e2e test",
     "e2e:install": "pnpm --filter @aisecretary/e2e install-browsers",
     "build": "pnpm -r build",
@@ -24,9 +26,51 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",
+    "@eslint/js": "^10.0.1",
+    "@stryker-mutator/core": "^9.6.1",
     "@types/node": "^22.0.0",
-    "tsx": "^4.19.0",
+    "eslint": "^10.8.0",
+    "tsx": "^4.23.13",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.0"
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.11"
+  },
+  "gauntlet": {
+    "coverageFloorPercent": 67
+  },
+  "pnpm": {
+    "overrides": {
+      "@babel/core@>=7.0.0 <7.29.6": "^7.29.6",
+      "@babel/plugin-transform-modules-systemjs@>=7.0.0 <7.29.4": "^7.29.4",
+      "@xmldom/xmldom@>=0.9.0 <0.9.12": "^0.9.12",
+      "axios@>=1.0.0 <1.18.0": "^1.18.0",
+      "baseline-browser-mapping@>=2.0.0 <2.11.0": "^2.11.0",
+      "brace-expansion@>=1.0.0 <1.1.18": "^1.1.18",
+      "brace-expansion@>=2.0.0 <2.1.4": "^2.1.4",
+      "brace-expansion@>=5.0.0 <5.0.9": "^5.0.9",
+      "browserslist@>=4.0.0 <4.28.7": "^4.28.7",
+      "fast-uri@>=3.0.0 <3.1.6": "^3.1.6",
+      "fast-xml-builder@>=1.0.0 <1.1.7": "^1.1.7",
+      "find-my-way@>=9.0.0 <9.7.0": "^9.7.0",
+      "form-data@>=3.0.0 <3.0.5": "^3.0.5",
+      "form-data@>=4.0.0 <4.0.6": "^4.0.6",
+      "js-yaml@>=3.0.0 <3.15.2": "^3.15.2",
+      "js-yaml@>=4.0.0 <4.3.2": "^4.3.2",
+      "nanoid@>=3.0.0 <3.3.18": "^3.3.18",
+      "postcss@>=8.0.0 <8.5.23": "^8.5.23",
+      "postcss-selector-parser@>=6.0.0 <6.1.3": "^6.1.3",
+      "qs@>=6.0.0 <6.16.0": "^6.16.0",
+      "seroval@>=1.0.0 <1.5.3": "^1.5.3",
+      "shell-quote@>=1.0.0 <1.9.0": "^1.9.0",
+      "tmp@>=0.2.0 <0.2.6": "^0.2.6",
+      "undici@>=6.0.0 <6.28.0": "^6.28.0",
+      "vite@>=6.0.0 <6.4.3": "^6.4.3",
+      "ws@>=6.0.0 <6.2.4": "^6.2.4",
+      "ws@>=7.0.0 <7.5.11": "^7.5.11",
+      "ws@>=8.0.0 <8.21.0": "^8.21.0"
+    }
+  },
+  "overrides": {
+    "qs": "^6.16.0"
   }
 }

@@ -1,0 +1,10 @@
+[test]
+# Measured from this repo's own coverage when the gauntlet was armed, minus a
+# 2-point margin for run-to-run noise. Raise it when the suite improves; never
+# lower it. Lowering this line is the only way coverage can regress, which is
+# the point.
+coverage = true
+# (the gauntlet removed a coverageThreshold line here: bun applies it per
+#  FILE, not to the project total, so it failed runs whose output read
+#  "N pass, 0 fail". The floor now lives in package.json under
+#  gauntlet.coverageFloorPercent and is enforced by the tests gate.)

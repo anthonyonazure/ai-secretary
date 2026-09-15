@@ -55,6 +55,15 @@ const REQUIRED_FIELDS: ReadonlyArray<keyof SalesforceCrmProviderConfig> = [
   'region',
 ];
 
+/**
+ * Escape a value for use inside a single-quoted SOQL string literal.
+ * Backslashes must be escaped first: escaping only the quote turns an input
+ * of `\'` into `\\'`, where the added backslash is consumed by the input's
+ * own and the quote closes the literal.
+ */
+export const escapeSoqlString = (value: string): string =>
+  value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
 export class SalesforceCrmProvider implements CrmProvider {
   readonly kind = 'salesforce' as const;
   private readonly accessToken: string;
@@ -135,7 +144,7 @@ export class SalesforceCrmProvider implements CrmProvider {
     interface QueryResponse {
       records: Array<{ Id: string; Email?: string; Name?: string }>;
     }
-    const escaped = input.email.toLowerCase().replace(/'/g, "\\'");
+    const escaped = escapeSoqlString(input.email.toLowerCase());
     const soql = `SELECT Id, Email, Name FROM Contact WHERE Email = '${escaped}' LIMIT 1`;
     const body = await this.request<QueryResponse>(
       `/services/data/${this.apiVersion}/query/?q=${encodeURIComponent(soql)}`,

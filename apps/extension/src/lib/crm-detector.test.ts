@@ -23,6 +23,12 @@ describe('detectCrmHost', () => {
     expect(detectCrmHost('mail.google.com')).toBe('unknown');
   });
 
+  it('does not match a CRM domain embedded in a different host', () => {
+    expect(detectCrmHost('app.hubspot.com.attacker.example')).toBe('unknown');
+    expect(detectCrmHost('evil-salesforce.com')).toBe('unknown');
+    expect(detectCrmHost('x.pipedrive.com.evil.test')).toBe('unknown');
+  });
+
   it('is case-insensitive', () => {
     expect(detectCrmHost('APP.HUBSPOT.COM')).toBe('hubspot');
   });
