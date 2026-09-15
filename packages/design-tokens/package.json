@@ -23,10 +23,10 @@
     "clean": "rm -rf build dist"
   },
   "dependencies": {
-    "style-dictionary": "^4.3.0"
+    "style-dictionary": "^5.4.4"
   },
   "devDependencies": {
-    "tsx": "^4.19.0",
+    "tsx": "^4.23.13",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
   }

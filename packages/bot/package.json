@@ -26,7 +26,7 @@
     "@aisecretary/shared": "workspace:*"
   },
   "devDependencies": {
-    "tsx": "^4.19.0",
+    "tsx": "^4.23.13",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
   }
