@@ -132,7 +132,7 @@ export class StaticKekKeyring implements KekKeyring {
     kekId: string;
   }): Promise<Buffer> {
     const kek = this.requireKey(input.kekId);
-    const decipher = createDecipheriv(ALGORITHM, kek, input.iv);
+    const decipher = createDecipheriv(ALGORITHM, kek, input.iv, { authTagLength: TAG_BYTES });
     decipher.setAuthTag(input.tag);
     return Buffer.concat([decipher.update(input.wrapped), decipher.final()]);
   }
@@ -199,7 +199,7 @@ export const decryptEnvelope = async (
     const iv = Buffer.from(envelope.iv, 'base64');
     const tag = Buffer.from(envelope.tag, 'base64');
     const ciphertext = Buffer.from(envelope.ciphertext, 'base64');
-    const decipher = createDecipheriv(ALGORITHM, dek, iv);
+    const decipher = createDecipheriv(ALGORITHM, dek, iv, { authTagLength: TAG_BYTES });
     decipher.setAuthTag(tag);
     const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
     return plaintext.toString('utf8');

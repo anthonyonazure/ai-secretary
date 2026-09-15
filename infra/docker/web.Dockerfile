@@ -40,7 +40,14 @@ RUN pnpm --filter @aisecretary/design-tokens build
 RUN pnpm --filter @aisecretary/web build
 
 FROM caddy:2-alpine AS runtime
+# The caddy image runs as root by default. Nothing here needs root: the site
+# listens on 8080 and only serves static files, so run as an unprivileged user
+# that owns Caddy's state directories (/data for certs/locks, /config for the
+# autosaved config).
+RUN addgroup -S caddy && adduser -S -G caddy -H -s /sbin/nologin caddy \
+    && chown -R caddy:caddy /data /config
 COPY --from=build /repo/apps/web/dist /usr/share/caddy
 COPY infra/docker/Caddyfile.web /etc/caddy/Caddyfile
 EXPOSE 8080
+USER caddy
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
