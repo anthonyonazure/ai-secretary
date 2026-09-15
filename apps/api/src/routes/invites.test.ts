@@ -196,9 +196,9 @@ describe('invites routes — admin flow', () => {
     expect(job.kind).toBe('tenant-invite');
     expect(job.recipient.email).toBe('newmember@acme.test');
     expect(typeof job.payload.context.acceptUrl).toBe('string');
-    expect(
-      (job.payload.context.acceptUrl as string).startsWith('https://app.aisecretary.test'),
-    ).toBe(true);
+    expect(new URL(job.payload.context.acceptUrl as string).origin).toBe(
+      'https://app.aisecretary.test',
+    );
     await ctx.app.close();
   });
 

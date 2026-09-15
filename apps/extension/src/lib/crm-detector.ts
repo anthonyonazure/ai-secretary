@@ -12,12 +12,20 @@
 
 export type CrmHost = 'hubspot' | 'salesforce' | 'pipedrive' | 'unknown';
 
-const SALESFORCE_PATTERNS = ['.salesforce.com', '.lightning.force.com'];
+const SALESFORCE_DOMAINS = ['salesforce.com', 'lightning.force.com'];
+
+/**
+ * True when `host` is `domain` itself or a subdomain of it. A substring test
+ * is not enough: `app.hubspot.com.attacker.example` contains `.hubspot.com`
+ * but belongs to whoever owns attacker.example.
+ */
+const isHostOrSubdomain = (host: string, domain: string): boolean =>
+  host === domain || host.endsWith(`.${domain}`);
 
 export const detectCrmHost = (hostname: string): CrmHost => {
-  const host = hostname.toLowerCase();
-  if (host.includes('.hubspot.com')) return 'hubspot';
-  if (SALESFORCE_PATTERNS.some((p) => host.includes(p))) return 'salesforce';
-  if (host.includes('.pipedrive.com')) return 'pipedrive';
+  const host = hostname.toLowerCase().replace(/\.$/, '');
+  if (isHostOrSubdomain(host, 'hubspot.com')) return 'hubspot';
+  if (SALESFORCE_DOMAINS.some((d) => isHostOrSubdomain(host, d))) return 'salesforce';
+  if (isHostOrSubdomain(host, 'pipedrive.com')) return 'pipedrive';
   return 'unknown';
 };

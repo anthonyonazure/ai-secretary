@@ -202,7 +202,7 @@ async function buildCss(baseTree, modes) {
       ':root',
       motionReduced.data,
       'prefers-reduced-motion auto-applied',
-    ).replace(':root {', ':root {');
+    );
     segments.push('@media (prefers-reduced-motion: reduce) {');
     segments.push(motionReducedBlock);
     segments.push('}');
@@ -422,6 +422,9 @@ function mergeTrees(base, overlay) {
   const apply = (target, source) => {
     for (const [key, value] of Object.entries(source)) {
       if (key === '_mode') continue;
+      // Token files are JSON, and JSON.parse produces an own "__proto__" key.
+      // Assigning through it would write to Object.prototype.
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
       if (value && typeof value === 'object' && !('value' in value)) {
         if (typeof target[key] !== 'object' || target[key] === null) target[key] = {};
         apply(target[key], value);
